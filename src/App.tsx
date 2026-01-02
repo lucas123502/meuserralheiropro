@@ -1,11 +1,42 @@
-
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { ThemeProvider } from 'next-themes'
+import { Toaster } from '@/components/ui/toaster'
+import MainLayout from '@/components/layout/MainLayout'
+import InitialRedirect from '@/components/InitialRedirect'
+import Orcamentos from '@/pages/Orcamentos'
+import NovoOrcamento from '@/pages/NovoOrcamento'
+import Pedidos from '@/pages/Pedidos'
+import Financeiro from '@/pages/Financeiro'
+import Clientes from '@/pages/Clientes'
+import Ideias from '@/pages/Ideias'
+import Catalogos from '@/pages/Catalogos'
+import Relatorios from '@/pages/Relatorios'
+import Ajuda from '@/pages/Ajuda'
+import Onboarding from '@/pages/Onboarding'
 
 function App() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <h1 className="text-4xl font-bold">Lasy App</h1>
-    </div>
-  );
+    <ThemeProvider attribute="class" defaultTheme="light">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<InitialRedirect />} />
+            <Route path="orcamentos" element={<Orcamentos />} />
+            <Route path="orcamentos/novo" element={<NovoOrcamento />} />
+            <Route path="pedidos" element={<Pedidos />} />
+            <Route path="financeiro" element={<Financeiro />} />
+            <Route path="clientes" element={<Clientes />} />
+            <Route path="ideias" element={<Ideias />} />
+            <Route path="catalogos" element={<Catalogos />} />
+            <Route path="relatorios" element={<Relatorios />} />
+            <Route path="ajuda" element={<Ajuda />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+      <Toaster />
+    </ThemeProvider>
+  )
 }
 
-export default App;
+export default App
