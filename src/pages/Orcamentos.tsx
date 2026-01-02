@@ -3,16 +3,19 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, FileText, Calendar, DollarSign, Eye, Download } from 'lucide-react'
+import { Plus, FileText, Calendar, DollarSign, Eye, Download, CheckCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { visualizarPDF, baixarPDF } from '@/lib/pdf-generator'
 import PDFModal from '@/components/PDFModal'
+import { useToast } from '@/hooks/use-toast'
+import { Pedido } from '@/types/pedido'
 
 interface Orcamento {
   id: string
   data: Date | string
   cliente: string
+  clienteId?: string
   valor: number
   status: 'rascunho' | 'enviado'
   tipoServico: string
@@ -28,9 +31,11 @@ interface Orcamento {
     endereco: string
   }
   observacoes?: string
+  convertidoEmPedido?: boolean
 }
 
 export default function Orcamentos() {
+  const { toast } = useToast()
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
   const [modalAberto, setModalAberto] = useState(false)
   const [pdfUrl, setPdfUrl] = useState('')
@@ -61,6 +66,47 @@ export default function Orcamentos() {
         setPdfUrl('')
       }
     }, 300)
+  }
+
+  const converterEmPedido = (orcamento: Orcamento) => {
+    if (orcamento.convertidoEmPedido) {
+      toast({
+        title: 'Pedido já criado',
+        description: 'Este orçamento já foi convertido em pedido',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    const novoPedido: Pedido = {
+      id: Date.now().toString(),
+      orcamentoId: orcamento.id,
+      clienteId: orcamento.clienteId || '',
+      clienteNome: orcamento.cliente,
+      tipoServico: orcamento.tipoServico,
+      modelo: orcamento.modelo,
+      valor: orcamento.valor,
+      status: 'aprovado',
+      criadoEm: new Date().toISOString(),
+      atualizadoEm: new Date().toISOString(),
+      observacoes: orcamento.observacoes
+    }
+
+    const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]')
+    pedidos.push(novoPedido)
+    localStorage.setItem('pedidos', JSON.stringify(pedidos))
+
+    // Marcar orçamento como convertido
+    const orcamentosAtualizados = orcamentos.map(o =>
+      o.id === orcamento.id ? { ...o, convertidoEmPedido: true } : o
+    )
+    setOrcamentos(orcamentosAtualizados)
+    localStorage.setItem('orcamentos', JSON.stringify(orcamentosAtualizados))
+
+    toast({
+      title: 'Pedido criado com sucesso!',
+      description: 'O orçamento foi convertido em pedido'
+    })
   }
 
   if (orcamentos.length === 0) {
@@ -176,6 +222,21 @@ export default function Orcamentos() {
                     <Download className="h-4 w-4 mr-2" />
                     Baixar PDF
                   </Button>
+                  {!orcamento.convertidoEmPedido && orcamento.status === 'enviado' && (
+                    <Button
+                      size="sm"
+                      onClick={() => converterEmPedido(orcamento)}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Converter em Pedido
+                    </Button>
+                  )}
+                  {orcamento.convertidoEmPedido && (
+                    <Badge className="bg-green-100 text-green-800 px-3 py-1">
+                      Convertido em Pedido
+                    </Badge>
+                  )}
                 </div>
               </div>
             </CardContent>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ArrowLeft, ArrowRight, Check, AlertCircle } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ArrowLeft, ArrowRight, Check, AlertCircle, Plus } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { Cliente } from '@/types/cliente'
 
 type TipoServico = 'Portão' | 'Estrutura metálica' | 'Toldo' | 'Outro'
 type Modelo = 'Portão de correr' | 'Portão basculante' | 'Estrutura simples' | 'Toldo fixo' | 'Toldo retrátil' | 'Outro'
@@ -29,6 +31,7 @@ interface OrcamentoData {
   modelo: Modelo | ''
   medidas: Medidas
   valorFinal: number
+  clienteId: string
   cliente: DadosCliente
   observacoes: string
 }
@@ -37,6 +40,8 @@ export default function NovoOrcamento() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const [etapa, setEtapa] = useState(1)
+  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [clienteSelecionado, setClienteSelecionado] = useState<string>('novo')
 
   // Estado inicial seguro para novo orçamento
   const estadoInicial: OrcamentoData = {
@@ -44,11 +49,19 @@ export default function NovoOrcamento() {
     modelo: '',
     medidas: { largura: '', altura: '', quantidade: '1' },
     valorFinal: 0,
+    clienteId: '',
     cliente: { nome: '', telefone: '', endereco: '' },
     observacoes: ''
   }
 
   const [dados, setDados] = useState<OrcamentoData>(estadoInicial)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('clientes')
+    if (saved) {
+      setClientes(JSON.parse(saved))
+    }
+  }, [])
 
   // Helper function para garantir string segura para inputs
   const toSafeInputValue = (value: string | number): string => {
@@ -151,6 +164,31 @@ export default function NovoOrcamento() {
     setEtapa(etapa - 1)
   }
 
+  const selecionarCliente = (clienteId: string) => {
+    setClienteSelecionado(clienteId)
+
+    if (clienteId === 'novo') {
+      setDados({
+        ...dados,
+        clienteId: '',
+        cliente: { nome: '', telefone: '', endereco: '' }
+      })
+    } else {
+      const cliente = clientes.find(c => c.id === clienteId)
+      if (cliente) {
+        setDados({
+          ...dados,
+          clienteId: cliente.id,
+          cliente: {
+            nome: cliente.nome,
+            telefone: cliente.telefone,
+            endereco: cliente.endereco
+          }
+        })
+      }
+    }
+  }
+
   const salvarOrcamento = (status: 'rascunho' | 'enviado') => {
     if (!dados.cliente.nome) {
       toast({
@@ -164,6 +202,7 @@ export default function NovoOrcamento() {
       id: Date.now().toString(),
       data: new Date().toISOString(),
       cliente: dados.cliente.nome,
+      clienteId: dados.clienteId,
       valor: dados.valorFinal,
       status,
       tipoServico: dados.tipoServico,
@@ -498,6 +537,29 @@ export default function NovoOrcamento() {
               <div className="border-t pt-6">
                 <h3 className="text-lg font-semibold mb-4">Dados do Cliente</h3>
                 <div className="space-y-4">
+                  {clientes.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Selecionar Cliente</Label>
+                      <Select value={clienteSelecionado} onValueChange={selecionarCliente}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Escolha um cliente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="novo">
+                            <div className="flex items-center gap-2">
+                              <Plus className="h-4 w-4" />
+                              Cadastrar novo cliente
+                            </div>
+                          </SelectItem>
+                          {clientes.map(cliente => (
+                            <SelectItem key={cliente.id} value={cliente.id}>
+                              {cliente.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="nomeCliente">Nome do Cliente *</Label>
                     <Input
@@ -508,6 +570,7 @@ export default function NovoOrcamento() {
                         ...dados,
                         cliente: { ...dados.cliente, nome: e.target.value }
                       })}
+                      disabled={clienteSelecionado !== 'novo'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -520,6 +583,7 @@ export default function NovoOrcamento() {
                         ...dados,
                         cliente: { ...dados.cliente, telefone: e.target.value }
                       })}
+                      disabled={clienteSelecionado !== 'novo'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -532,6 +596,7 @@ export default function NovoOrcamento() {
                         ...dados,
                         cliente: { ...dados.cliente, endereco: e.target.value }
                       })}
+                      disabled={clienteSelecionado !== 'novo'}
                     />
                   </div>
                   <div className="space-y-2">
