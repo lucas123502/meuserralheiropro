@@ -57,6 +57,16 @@ export default function NovoOrcamento() {
     'Outro': ['Outro']
   }
 
+  const validarMedidas = () => {
+    const largura = parseFloat(dados.medidas.largura)
+    const altura = parseFloat(dados.medidas.altura)
+    const quantidade = parseInt(dados.medidas.quantidade)
+
+    return !isNaN(largura) && largura > 0 &&
+           !isNaN(altura) && altura > 0 &&
+           !isNaN(quantidade) && quantidade > 0
+  }
+
   const calcularValor = () => {
     const largura = parseFloat(dados.medidas.largura) || 0
     const altura = parseFloat(dados.medidas.altura) || 0
@@ -81,9 +91,16 @@ export default function NovoOrcamento() {
       return
     }
     if (etapa === 3) {
-      if (!dados.medidas.largura || !dados.medidas.altura) {
+      if (!dados.medidas.largura || !dados.medidas.altura || !dados.medidas.quantidade) {
         toast({
-          title: 'Preencha todas as medidas',
+          title: 'Preencha todos os campos numéricos antes de avançar',
+          variant: 'destructive'
+        })
+        return
+      }
+      if (!validarMedidas()) {
+        toast({
+          title: 'Preencha todos os campos numéricos antes de avançar',
           variant: 'destructive'
         })
         return
@@ -248,21 +265,35 @@ export default function NovoOrcamento() {
                     min="1"
                     placeholder="Ex: 1"
                     value={dados.medidas.quantidade}
-                    onChange={(e) => setDados({
-                      ...dados,
-                      medidas: { ...dados.medidas, quantidade: e.target.value }
-                    })}
+                    onChange={(e) => {
+                      const valor = e.target.value
+                      const numero = parseInt(valor)
+                      if (valor === '' || (numero >= 1 && !isNaN(numero))) {
+                        setDados({
+                          ...dados,
+                          medidas: { ...dados.medidas, quantidade: valor }
+                        })
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === '' || parseInt(e.target.value) < 1) {
+                        setDados({
+                          ...dados,
+                          medidas: { ...dados.medidas, quantidade: '1' }
+                        })
+                      }
+                    }}
                   />
                 </div>
               </div>
-              {dados.medidas.largura && dados.medidas.altura && (
+              {validarMedidas() && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     Área total: {(
                       parseFloat(dados.medidas.largura) *
                       parseFloat(dados.medidas.altura) *
-                      parseInt(dados.medidas.quantidade || '1')
+                      parseInt(dados.medidas.quantidade)
                     ).toFixed(2)} m²
                   </AlertDescription>
                 </Alert>
@@ -296,17 +327,17 @@ export default function NovoOrcamento() {
                     <div>
                       <div className="text-sm text-gray-600">Medidas</div>
                       <div className="font-semibold">
-                        {dados.medidas.largura}m × {dados.medidas.altura}m × {dados.medidas.quantidade}
+                        {parseFloat(dados.medidas.largura).toFixed(2)}m × {parseFloat(dados.medidas.altura).toFixed(2)}m × {dados.medidas.quantidade}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600">Área Total</div>
                       <div className="font-semibold">
-                        {(
+                        {validarMedidas() ? (
                           parseFloat(dados.medidas.largura) *
                           parseFloat(dados.medidas.altura) *
                           parseInt(dados.medidas.quantidade)
-                        ).toFixed(2)} m²
+                        ).toFixed(2) : '0.00'} m²
                       </div>
                     </div>
                   </div>
