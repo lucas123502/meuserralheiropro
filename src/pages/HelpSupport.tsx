@@ -1,0 +1,410 @@
+import { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Video,
+  HelpCircle,
+  MessageSquare,
+  XCircle,
+  PlayCircle,
+  ChevronDown,
+  ChevronUp,
+  Send,
+  CheckCircle2
+} from 'lucide-react'
+
+export default function HelpSupport() {
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [activeTab, setActiveTab] = useState('videos')
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
+  const [suggestionSent, setSuggestionSent] = useState(false)
+  const [cancellationSent, setCancellationSent] = useState(false)
+  const [suggestion, setSuggestion] = useState('')
+  const [cancellationReasons, setCancellationReasons] = useState<string[]>([])
+  const [otherReason, setOtherReason] = useState('')
+
+  // Dados dos vídeos (placeholder)
+  const videos = [
+    {
+      id: 1,
+      title: 'Como criar um orçamento',
+      description: 'Aprenda a criar orçamentos profissionais em poucos passos',
+      duration: '3:45',
+      thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop'
+    },
+    {
+      id: 2,
+      title: 'Como transformar orçamento em pedido',
+      description: 'Veja como converter um orçamento aprovado em pedido',
+      duration: '2:30',
+      thumbnail: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=225&fit=crop'
+    },
+    {
+      id: 3,
+      title: 'Como usar o catálogo',
+      description: 'Descubra como organizar e utilizar seu catálogo de produtos',
+      duration: '4:15',
+      thumbnail: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=225&fit=crop'
+    },
+    {
+      id: 4,
+      title: 'Como acompanhar pedidos',
+      description: 'Gerencie e acompanhe todos os seus pedidos facilmente',
+      duration: '3:00',
+      thumbnail: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=225&fit=crop'
+    },
+    {
+      id: 5,
+      title: 'Como ver o faturamento',
+      description: 'Entenda seus relatórios financeiros e faturamento',
+      duration: '4:30',
+      thumbnail: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&h=225&fit=crop'
+    }
+  ]
+
+  // Perguntas frequentes
+  const faqs = [
+    {
+      id: 1,
+      question: 'Por que meu faturamento está zerado?',
+      answer: 'O faturamento só contabiliza pedidos finalizados com pagamento confirmado. Orçamentos e pedidos em andamento não aparecem no faturamento. Verifique se você marcou os pedidos como "Finalizado" após receber o pagamento.'
+    },
+    {
+      id: 2,
+      question: 'Quando um pedido entra no financeiro?',
+      answer: 'Um pedido entra no financeiro quando você marca ele como "Finalizado" e confirma o recebimento do pagamento. Pedidos em outras etapas (orçamento, em produção, aguardando pagamento) não são contabilizados.'
+    },
+    {
+      id: 3,
+      question: 'Posso editar um orçamento depois de enviado?',
+      answer: 'Sim! Você pode editar um orçamento a qualquer momento antes de transformá-lo em pedido. Basta acessar a lista de orçamentos, clicar no orçamento desejado e fazer as alterações necessárias.'
+    },
+    {
+      id: 4,
+      question: 'Como transformar orçamento em pedido?',
+      answer: 'Abra o orçamento aprovado pelo cliente e clique no botão "Transformar em Pedido". O sistema copiará todas as informações e criará um novo pedido automaticamente. Você pode então acompanhar a produção e entrega.'
+    },
+    {
+      id: 5,
+      question: 'O cliente recebe o orçamento em PDF?',
+      answer: 'Sim! Ao finalizar um orçamento, você pode gerar e enviar um PDF profissional diretamente para o cliente por WhatsApp ou email. O PDF contém todos os detalhes: itens, valores, condições e forma de pagamento.'
+    },
+    {
+      id: 6,
+      question: 'Como faço backup dos meus dados?',
+      answer: 'Seus dados estão automaticamente salvos e protegidos na nuvem. Você não precisa fazer backup manual. Todas as informações são sincronizadas em tempo real e podem ser acessadas de qualquer dispositivo.'
+    },
+    {
+      id: 7,
+      question: 'Posso usar o app em mais de um dispositivo?',
+      answer: 'Sim! Você pode acessar o Meu Serralheiro Pro de qualquer computador, tablet ou celular. Basta fazer login com seu email e senha. Todos os dados serão sincronizados automaticamente.'
+    },
+    {
+      id: 8,
+      question: 'Como adiciono produtos no catálogo?',
+      answer: 'Acesse o menu Catálogo e clique em "Novo Produto". Preencha as informações (nome, categoria, preço) e salve. Seus produtos ficam organizados por categoria para facilitar o uso nos orçamentos.'
+    }
+  ]
+
+  // Motivos de cancelamento
+  const cancellationOptions = [
+    { id: 'price', label: 'Preço' },
+    { id: 'difficult', label: 'Achei difícil de usar' },
+    { id: 'needs', label: 'Não atendeu minhas necessidades' },
+    { id: 'features', label: 'Falta de funcionalidades' },
+    { id: 'closing', label: 'Estou encerrando a atividade' },
+    { id: 'other', label: 'Outro motivo' }
+  ]
+
+  const handleSuggestionSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setSuggestionSent(true)
+    setSuggestion('')
+    setTimeout(() => setSuggestionSent(false), 5000)
+  }
+
+  const handleCancellationSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setCancellationSent(true)
+    setCancellationReasons([])
+    setOtherReason('')
+    setTimeout(() => setCancellationSent(false), 5000)
+  }
+
+  const toggleFaq = (id: number) => {
+    setExpandedFaq(expandedFaq === id ? null : id)
+  }
+
+  const handleReasonToggle = (reasonId: string) => {
+    if (cancellationReasons.includes(reasonId)) {
+      setCancellationReasons(cancellationReasons.filter(r => r !== reasonId))
+    } else {
+      setCancellationReasons([...cancellationReasons, reasonId])
+    }
+  }
+
+  return (
+    <div className="container mx-auto p-4 md:p-6 max-w-6xl">
+      {/* Cabeçalho */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Ajuda & Suporte</h1>
+        <p className="text-muted-foreground">
+          Encontre respostas, aprenda a usar o app e envie suas sugestões
+        </p>
+      </div>
+
+      {/* Tabs de navegação */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
+          <TabsTrigger value="videos" className="flex items-center gap-2 py-2">
+            <Video className="h-4 w-4" />
+            <span className="hidden sm:inline">Vídeos</span>
+          </TabsTrigger>
+          <TabsTrigger value="faq" className="flex items-center gap-2 py-2">
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">FAQ</span>
+          </TabsTrigger>
+          <TabsTrigger value="suggestions" className="flex items-center gap-2 py-2">
+            <MessageSquare className="h-4 w-4" />
+            <span className="hidden sm:inline">Sugestões</span>
+          </TabsTrigger>
+          <TabsTrigger value="cancellation" className="flex items-center gap-2 py-2">
+            <XCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Cancelar</span>
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Seção: Como usar o aplicativo (Vídeos) */}
+        <TabsContent value="videos" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Como usar o aplicativo</CardTitle>
+              <CardDescription>
+                Vídeos curtos para te ajudar a começar. Conteúdo completo será adicionado em breve.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {videos.map((video) => (
+                  <Card key={video.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
+                    <div className="relative overflow-hidden rounded-t-lg">
+                      <img
+                        src={video.thumbnail}
+                        alt={video.title}
+                        className="w-full h-40 object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/50 transition-colors">
+                        <PlayCircle className="h-12 w-12 text-white" />
+                      </div>
+                      <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                        {video.duration}
+                      </div>
+                    </div>
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold mb-1">{video.title}</h3>
+                      <p className="text-sm text-muted-foreground">{video.description}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Alert className="mt-6">
+                <Video className="h-4 w-4" />
+                <AlertDescription>
+                  Os vídeos tutoriais estarão disponíveis em breve. Enquanto isso, explore o FAQ para encontrar respostas rápidas!
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Seção: Perguntas Frequentes */}
+        <TabsContent value="faq" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Perguntas Frequentes (FAQ)</CardTitle>
+              <CardDescription>
+                Respostas para as dúvidas mais comuns dos usuários
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {faqs.map((faq) => (
+                  <div key={faq.id} className="border rounded-lg">
+                    <button
+                      onClick={() => toggleFaq(faq.id)}
+                      className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-accent transition-colors"
+                    >
+                      <span className="font-medium pr-4">{faq.question}</span>
+                      {expandedFaq === faq.id ? (
+                        <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      )}
+                    </button>
+                    {expandedFaq === faq.id && (
+                      <div className="px-4 pb-3 pt-1 text-muted-foreground">
+                        {faq.answer}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Seção: Sugestões e Feedback */}
+        <TabsContent value="suggestions" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sugestões e Feedback</CardTitle>
+              <CardDescription>
+                Sua opinião é muito importante para melhorarmos continuamente
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {suggestionSent ? (
+                <Alert className="bg-green-50 border-green-200">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    Obrigado pela sugestão! Nossa equipe irá analisar com atenção e considerar melhorias sempre que possível.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <form onSubmit={handleSuggestionSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="suggestion">Sua sugestão ou feedback</Label>
+                    <Textarea
+                      id="suggestion"
+                      value={suggestion}
+                      onChange={(e) => setSuggestion(e.target.value)}
+                      placeholder="Conte-nos o que você acha que poderia melhorar no aplicativo, novas funcionalidades que gostaria de ver, ou qualquer outro comentário..."
+                      className="min-h-32 mt-2"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full sm:w-auto">
+                    <Send className="h-4 w-4 mr-2" />
+                    Enviar sugestão
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Seção: Cancelamento */}
+        <TabsContent value="cancellation" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Solicitação de Cancelamento</CardTitle>
+              <CardDescription>
+                Sentiremos sua falta! Por favor, nos diga o motivo do cancelamento
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {cancellationSent ? (
+                <Alert className="bg-blue-50 border-blue-200">
+                  <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    Sua solicitação foi registrada. Obrigado pelo feedback.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <form onSubmit={handleCancellationSubmit} className="space-y-4">
+                  <div>
+                    <Label className="mb-3 block">Por que você está cancelando? (selecione um ou mais motivos)</Label>
+                    <div className="space-y-3">
+                      {cancellationOptions.map((option) => (
+                        <div key={option.id} className="flex items-start space-x-2">
+                          <Checkbox
+                            id={option.id}
+                            checked={cancellationReasons.includes(option.id)}
+                            onCheckedChange={() => handleReasonToggle(option.id)}
+                          />
+                          <Label
+                            htmlFor={option.id}
+                            className="font-normal cursor-pointer leading-none pt-0.5"
+                          >
+                            {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {cancellationReasons.includes('other') && (
+                    <div>
+                      <Label htmlFor="otherReason">Descreva o motivo (opcional)</Label>
+                      <Textarea
+                        id="otherReason"
+                        value={otherReason}
+                        onChange={(e) => setOtherReason(e.target.value)}
+                        placeholder="Conte-nos mais sobre o motivo do cancelamento..."
+                        className="min-h-24 mt-2"
+                      />
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    variant="destructive"
+                    className="w-full sm:w-auto"
+                    disabled={cancellationReasons.length === 0}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Confirmar cancelamento
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Modal de Onboarding */}
+      <Dialog open={showOnboarding} onOpenChange={setShowOnboarding}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bem-vindo ao Meu Serralheiro Pro!</DialogTitle>
+            <DialogDescription>
+              Quer aprender a usar o app em poucos minutos?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Preparamos vídeos curtos e práticos para você começar rapidamente e aproveitar todas as funcionalidades do aplicativo.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={() => {
+                  setShowOnboarding(false)
+                  setActiveTab('videos')
+                }}
+                className="flex-1"
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Assistir vídeos
+              </Button>
+              <Button
+                onClick={() => setShowOnboarding(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Pular por agora
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

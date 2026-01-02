@@ -11,7 +11,7 @@ import Clientes from '@/pages/Clientes'
 import Ideias from '@/pages/Ideias'
 import Catalogos from '@/pages/Catalogos'
 import Relatorios from '@/pages/Relatorios'
-import Ajuda from '@/pages/Ajuda'
+import HelpSupport from '@/pages/HelpSupport'
 import Onboarding from '@/pages/Onboarding'
 
 function App() {
@@ -30,7 +30,7 @@ function App() {
             <Route path="ideias" element={<Ideias />} />
             <Route path="catalogos" element={<Catalogos />} />
             <Route path="relatorios" element={<Relatorios />} />
-            <Route path="ajuda" element={<Ajuda />} />
+            <Route path="ajuda" element={<HelpSupport />} />
           </Route>
         </Routes>
       </BrowserRouter>
