@@ -62,6 +62,28 @@ export default function NovoOrcamento() {
     if (saved) {
       setClientes(JSON.parse(saved))
     }
+
+    // Verificar se há dados vindos do catálogo
+    const dadosCatalogo = localStorage.getItem('orcamentoCatalogo')
+    if (dadosCatalogo) {
+      try {
+        const { tipoServico, modelo } = JSON.parse(dadosCatalogo)
+        setDados({
+          ...estadoInicial,
+          tipoServico: tipoServico as TipoServico,
+          modelo: modelo as Modelo
+        })
+        // Limpar dados do catálogo após usar
+        localStorage.removeItem('orcamentoCatalogo')
+
+        toast({
+          title: 'Orçamento iniciado',
+          description: 'Continue preenchendo os dados do orçamento'
+        })
+      } catch (error) {
+        console.error('Erro ao carregar dados do catálogo:', error)
+      }
+    }
   }, [])
 
   // Helper function para garantir string segura para inputs
