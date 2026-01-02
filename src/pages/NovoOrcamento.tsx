@@ -350,8 +350,11 @@ export default function NovoOrcamento() {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={dados.valorFinal}
-                    onChange={(e) => setDados({ ...dados, valorFinal: parseFloat(e.target.value) })}
+                    value={isNaN(dados.valorFinal) ? '' : dados.valorFinal}
+                    onChange={(e) => {
+                      const valor = parseFloat(e.target.value)
+                      setDados({ ...dados, valorFinal: isNaN(valor) ? 0 : valor })
+                    }}
                     className="text-2xl font-bold"
                   />
                   <p className="text-sm text-gray-600">
