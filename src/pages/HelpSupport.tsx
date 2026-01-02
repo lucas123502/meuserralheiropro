@@ -2,10 +2,8 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -17,7 +15,10 @@ import {
   ChevronDown,
   ChevronUp,
   Send,
-  CheckCircle2
+  CheckCircle2,
+  TrendingUp,
+  BookOpen,
+  AlertCircle
 } from 'lucide-react'
 
 export default function HelpSupport() {
@@ -27,8 +28,12 @@ export default function HelpSupport() {
   const [suggestionSent, setSuggestionSent] = useState(false)
   const [cancellationSent, setCancellationSent] = useState(false)
   const [suggestion, setSuggestion] = useState('')
-  const [cancellationReasons, setCancellationReasons] = useState<string[]>([])
-  const [otherReason, setOtherReason] = useState('')
+
+  // Estados do fluxo de cancelamento
+  const [selectedReason, setSelectedReason] = useState<string | null>(null)
+  const [feedbackText, setFeedbackText] = useState('')
+  const [feedbackSent, setFeedbackSent] = useState(false)
+  const [showRetentionContent, setShowRetentionContent] = useState(false)
 
   // Dados dos vídeos (placeholder)
   const videos = [
@@ -113,13 +118,12 @@ export default function HelpSupport() {
     }
   ]
 
-  // Motivos de cancelamento
+  // Motivos de cancelamento (sem "Falta de funcionalidades")
   const cancellationOptions = [
-    { id: 'price', label: 'Preço' },
+    { id: 'price', label: 'Preço / Financeiro' },
     { id: 'difficult', label: 'Achei difícil de usar' },
     { id: 'needs', label: 'Não atendeu minhas necessidades' },
-    { id: 'features', label: 'Falta de funcionalidades' },
-    { id: 'closing', label: 'Estou encerrando a atividade' },
+    { id: 'closing', label: 'Estou encerrando minha atividade' },
     { id: 'other', label: 'Outro motivo' }
   ]
 
@@ -130,25 +134,36 @@ export default function HelpSupport() {
     setTimeout(() => setSuggestionSent(false), 5000)
   }
 
-  const handleCancellationSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setCancellationSent(true)
-    setCancellationReasons([])
-    setOtherReason('')
-    setTimeout(() => setCancellationSent(false), 5000)
-  }
-
   const toggleFaq = (id: number) => {
     setExpandedFaq(expandedFaq === id ? null : id)
   }
 
-  const handleReasonToggle = (reasonId: string) => {
-    if (cancellationReasons.includes(reasonId)) {
-      setCancellationReasons(cancellationReasons.filter(r => r !== reasonId))
-    } else {
-      setCancellationReasons([...cancellationReasons, reasonId])
-    }
+  // Fluxo de cancelamento - Etapa 1: Selecionar motivo
+  const handleReasonSelect = (reasonId: string) => {
+    setSelectedReason(reasonId)
+    setShowRetentionContent(true)
+    setFeedbackText('')
+    setFeedbackSent(false)
   }
+
+  // Fluxo de cancelamento - Etapa 3: Enviar feedback
+  const handleFeedbackSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setFeedbackSent(true)
+  }
+
+  // Fluxo de cancelamento - Etapa 4: Cancelamento final
+  const handleFinalCancellation = () => {
+    setCancellationSent(true)
+    setSelectedReason(null)
+    setFeedbackText('')
+    setFeedbackSent(false)
+    setShowRetentionContent(false)
+  }
+
+  // Validação do campo obrigatório
+  const isFeedbackRequired = selectedReason === 'needs' || selectedReason === 'other'
+  const canSubmitFeedback = !isFeedbackRequired || (isFeedbackRequired && feedbackText.trim().length > 0)
 
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-6xl">
@@ -301,13 +316,13 @@ export default function HelpSupport() {
           </Card>
         </TabsContent>
 
-        {/* Seção: Cancelamento */}
+        {/* Seção: Cancelamento com Fluxo de Retenção */}
         <TabsContent value="cancellation" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Solicitação de Cancelamento</CardTitle>
               <CardDescription>
-                Sentiremos sua falta! Por favor, nos diga o motivo do cancelamento
+                Sentiremos sua falta! Mas antes, queremos entender melhor e talvez possamos ajudar
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -315,55 +330,195 @@ export default function HelpSupport() {
                 <Alert className="bg-blue-50 border-blue-200">
                   <CheckCircle2 className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-800">
-                    Sua solicitação foi registrada. Obrigado pelo feedback.
+                    Sua solicitação foi registrada. Agradecemos sua contribuição.
                   </AlertDescription>
                 </Alert>
               ) : (
-                <form onSubmit={handleCancellationSubmit} className="space-y-4">
+                <div className="space-y-6">
+                  {/* ETAPA 1: Seleção do Motivo */}
                   <div>
-                    <Label className="mb-3 block">Por que você está cancelando? (selecione um ou mais motivos)</Label>
-                    <div className="space-y-3">
+                    <Label className="text-base font-semibold mb-4 block">
+                      Por que você está pensando em cancelar?
+                    </Label>
+                    <div className="space-y-2">
                       {cancellationOptions.map((option) => (
-                        <div key={option.id} className="flex items-start space-x-2">
-                          <Checkbox
-                            id={option.id}
-                            checked={cancellationReasons.includes(option.id)}
-                            onCheckedChange={() => handleReasonToggle(option.id)}
-                          />
-                          <Label
-                            htmlFor={option.id}
-                            className="font-normal cursor-pointer leading-none pt-0.5"
-                          >
-                            {option.label}
-                          </Label>
+                        <div
+                          key={option.id}
+                          onClick={() => handleReasonSelect(option.id)}
+                          className={`
+                            p-4 border-2 rounded-lg cursor-pointer transition-all
+                            ${selectedReason === option.id
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/50'
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`
+                              w-4 h-4 rounded-full border-2 flex items-center justify-center
+                              ${selectedReason === option.id
+                                ? 'border-primary bg-primary'
+                                : 'border-muted-foreground'
+                              }
+                            `}>
+                              {selectedReason === option.id && (
+                                <div className="w-2 h-2 bg-white rounded-full" />
+                              )}
+                            </div>
+                            <span className="font-medium">{option.label}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {cancellationReasons.includes('other') && (
-                    <div>
-                      <Label htmlFor="otherReason">Descreva o motivo (opcional)</Label>
-                      <Textarea
-                        id="otherReason"
-                        value={otherReason}
-                        onChange={(e) => setOtherReason(e.target.value)}
-                        placeholder="Conte-nos mais sobre o motivo do cancelamento..."
-                        className="min-h-24 mt-2"
-                      />
+                  {/* ETAPA 2: Conteúdo de Retenção Dinâmico */}
+                  {showRetentionContent && selectedReason && !feedbackSent && (
+                    <div className="border-t pt-6">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
+                        <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                          <AlertCircle className="h-5 w-5 text-blue-600" />
+                          Talvez possamos te ajudar antes de cancelar
+                        </h3>
+
+                        {/* Resposta: Preço / Financeiro */}
+                        {selectedReason === 'price' && (
+                          <div className="space-y-4">
+                            <p className="text-sm text-muted-foreground">
+                              Entendemos a preocupação com o custo. Muitos usuários aumentam suas vendas usando o Meu Serralheiro Pro para criar orçamentos mais rápidos, profissionais e fechar mais pedidos.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => setActiveTab('videos')}
+                              >
+                                <TrendingUp className="h-4 w-4 mr-2" />
+                                Ver como aumentar vendas
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground italic">
+                              Dica: Explore Ideias & Conteúdo, Mensagens WhatsApp e Catálogo de serviços
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Resposta: Difícil de usar */}
+                        {selectedReason === 'difficult' && (
+                          <div className="space-y-4">
+                            <p className="text-sm text-muted-foreground">
+                              O aplicativo foi pensado para ser simples, mas sabemos que no início podem surgir dúvidas.
+                            </p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full sm:w-auto"
+                              onClick={() => setActiveTab('videos')}
+                            >
+                              <BookOpen className="h-4 w-4 mr-2" />
+                              Assistir vídeos rápidos de como usar
+                            </Button>
+                            <p className="text-xs text-muted-foreground italic">
+                              A maioria dos usuários aprende o básico em poucos minutos.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Resposta: Não atendeu necessidades */}
+                        {selectedReason === 'needs' && (
+                          <div className="space-y-4">
+                            <p className="text-sm text-muted-foreground mb-3">
+                              Nossa equipe analisa essas necessidades para melhorar o aplicativo continuamente.
+                            </p>
+                            <div>
+                              <Label htmlFor="needsText" className="text-sm font-semibold">
+                                Conte qual necessidade não foi atendida *
+                              </Label>
+                              <Textarea
+                                id="needsText"
+                                value={feedbackText}
+                                onChange={(e) => setFeedbackText(e.target.value)}
+                                placeholder="Descreva qual necessidade não foi atendida para que possamos avaliar uma solução..."
+                                className="min-h-28 mt-2"
+                                required
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground italic">
+                              Se for possível, entraremos em contato para entender melhor e tentar resolver antes do cancelamento.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Resposta: Encerrando atividade */}
+                        {selectedReason === 'closing' && (
+                          <div className="space-y-3">
+                            <p className="text-sm text-muted-foreground">
+                              Entendemos sua decisão. Sentimos muito por isso e agradecemos por ter usado o Meu Serralheiro Pro.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Resposta: Outro motivo */}
+                        {selectedReason === 'other' && (
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="otherText" className="text-sm font-semibold">
+                                Explique brevemente o motivo do cancelamento *
+                              </Label>
+                              <Textarea
+                                id="otherText"
+                                value={feedbackText}
+                                onChange={(e) => setFeedbackText(e.target.value)}
+                                placeholder="Conte-nos o motivo do seu cancelamento..."
+                                className="min-h-28 mt-2"
+                                required
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ETAPA 3: Enviar Feedback */}
+                      <div className="mt-4">
+                        <Button
+                          onClick={handleFeedbackSubmit}
+                          disabled={!canSubmitFeedback}
+                          className="w-full sm:w-auto"
+                        >
+                          <Send className="h-4 w-4 mr-2" />
+                          Enviar feedback e continuar
+                        </Button>
+                      </div>
                     </div>
                   )}
 
-                  <Button
-                    type="submit"
-                    variant="destructive"
-                    className="w-full sm:w-auto"
-                    disabled={cancellationReasons.length === 0}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Confirmar cancelamento
-                  </Button>
-                </form>
+                  {/* ETAPA 4: Confirmação Final do Cancelamento */}
+                  {feedbackSent && (
+                    <div className="border-t pt-6 space-y-4">
+                      <Alert className="bg-green-50 border-green-200">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          Obrigado pelo feedback. Isso nos ajuda a melhorar o Meu Serralheiro Pro.
+                        </AlertDescription>
+                      </Alert>
+
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-5">
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Se ainda assim deseja cancelar, clique no botão abaixo. Lamentamos vê-lo partir.
+                        </p>
+                        <Button
+                          onClick={handleFinalCancellation}
+                          variant="destructive"
+                          className="w-full sm:w-auto"
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Confirmar cancelamento
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
