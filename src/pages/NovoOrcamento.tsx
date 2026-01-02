@@ -37,14 +37,18 @@ export default function NovoOrcamento() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const [etapa, setEtapa] = useState(1)
-  const [dados, setDados] = useState<OrcamentoData>({
+
+  // Estado inicial seguro para novo orçamento
+  const estadoInicial: OrcamentoData = {
     tipoServico: '',
     modelo: '',
     medidas: { largura: '', altura: '', quantidade: '1' },
     valorFinal: 0,
     cliente: { nome: '', telefone: '', endereco: '' },
     observacoes: ''
-  })
+  }
+
+  const [dados, setDados] = useState<OrcamentoData>(estadoInicial)
 
   // Helper function para garantir string segura para inputs
   const toSafeInputValue = (value: string | number): string => {
@@ -79,11 +83,32 @@ export default function NovoOrcamento() {
   }
 
   const calcularValor = () => {
-    const largura = parseFloat(dados.medidas.largura) || 0
-    const altura = parseFloat(dados.medidas.altura) || 0
-    const quantidade = parseInt(dados.medidas.quantidade) || 1
+    // Garantir que todos os valores são válidos antes de calcular
+    const larguraStr = dados.medidas.largura
+    const alturaStr = dados.medidas.altura
+    const quantidadeStr = dados.medidas.quantidade
+
+    // Se algum campo estiver vazio, retornar 0
+    if (!larguraStr || !alturaStr || !quantidadeStr) {
+      return 0
+    }
+
+    const largura = parseFloat(larguraStr)
+    const altura = parseFloat(alturaStr)
+    const quantidade = parseInt(quantidadeStr)
+
+    // Validar se os números são válidos
+    if (!Number.isFinite(largura) || largura <= 0 ||
+        !Number.isFinite(altura) || altura <= 0 ||
+        !Number.isFinite(quantidade) || quantidade <= 0) {
+      return 0
+    }
+
     const area = largura * altura * quantidade
-    return area * VALOR_POR_M2
+    const valorCalculado = area * VALOR_POR_M2
+
+    // Garantir que o valor calculado é válido
+    return Number.isFinite(valorCalculado) ? valorCalculado : 0
   }
 
   const proximaEtapa = () => {
@@ -333,10 +358,13 @@ export default function NovoOrcamento() {
                       const largura = parseFloat(dados.medidas.largura)
                       const altura = parseFloat(dados.medidas.altura)
                       const quantidade = parseInt(dados.medidas.quantidade)
-                      const area = largura * altura * quantidade
 
-                      if (Number.isFinite(area)) {
-                        return area.toFixed(2)
+                      // Validar todos os números
+                      if (Number.isFinite(largura) && Number.isFinite(altura) && Number.isFinite(quantidade)) {
+                        const area = largura * altura * quantidade
+                        if (Number.isFinite(area) && area > 0) {
+                          return area.toFixed(2)
+                        }
                       }
                       return '0.00'
                     })()} m²
@@ -373,12 +401,19 @@ export default function NovoOrcamento() {
                       <div className="text-sm text-gray-600">Medidas</div>
                       <div className="font-semibold">
                         {(() => {
-                          const largura = parseFloat(dados.medidas.largura)
-                          const altura = parseFloat(dados.medidas.altura)
-                          const quantidade = dados.medidas.quantidade
+                          const larguraStr = dados.medidas.largura
+                          const alturaStr = dados.medidas.altura
+                          const quantidadeStr = dados.medidas.quantidade
+
+                          if (!larguraStr || !alturaStr || !quantidadeStr) {
+                            return 'Não informado'
+                          }
+
+                          const largura = parseFloat(larguraStr)
+                          const altura = parseFloat(alturaStr)
 
                           if (Number.isFinite(largura) && Number.isFinite(altura)) {
-                            return `${largura.toFixed(2)}m × ${altura.toFixed(2)}m × ${quantidade}`
+                            return `${largura.toFixed(2)}m × ${altura.toFixed(2)}m × ${quantidadeStr}`
                           }
                           return 'Não informado'
                         })()}
@@ -388,13 +423,17 @@ export default function NovoOrcamento() {
                       <div className="text-sm text-gray-600">Área Total</div>
                       <div className="font-semibold">
                         {(() => {
-                          if (validarMedidas()) {
-                            const largura = parseFloat(dados.medidas.largura)
-                            const altura = parseFloat(dados.medidas.altura)
-                            const quantidade = parseInt(dados.medidas.quantidade)
-                            const area = largura * altura * quantidade
+                          if (!validarMedidas()) {
+                            return '0.00 m²'
+                          }
 
-                            if (Number.isFinite(area)) {
+                          const largura = parseFloat(dados.medidas.largura)
+                          const altura = parseFloat(dados.medidas.altura)
+                          const quantidade = parseInt(dados.medidas.quantidade)
+
+                          if (Number.isFinite(largura) && Number.isFinite(altura) && Number.isFinite(quantidade)) {
+                            const area = largura * altura * quantidade
+                            if (Number.isFinite(area) && area > 0) {
                               return `${area.toFixed(2)} m²`
                             }
                           }
@@ -450,7 +489,7 @@ export default function NovoOrcamento() {
                   <p className="text-sm text-gray-600">
                     Valor calculado automaticamente: R$ {(() => {
                       const valorCalc = calcularValor()
-                      return Number.isFinite(valorCalc) ? valorCalc.toFixed(2) : '0.00'
+                      return Number.isFinite(valorCalc) && valorCalc >= 0 ? valorCalc.toFixed(2) : '0.00'
                     })()}
                   </p>
                 </div>
