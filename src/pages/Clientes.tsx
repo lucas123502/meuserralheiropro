@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Users, Phone, MapPin } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Cliente, ClienteFormData } from '@/types/cliente'
+import { migrarClientesDeOrcamentos } from '@/lib/cliente-manager'
 
 export default function Clientes() {
   const { toast } = useToast()
@@ -19,6 +20,8 @@ export default function Clientes() {
   })
 
   useEffect(() => {
+    // Migrar clientes de orçamentos antigos (primeira vez)
+    migrarClientesDeOrcamentos()
     carregarClientes()
   }, [])
 

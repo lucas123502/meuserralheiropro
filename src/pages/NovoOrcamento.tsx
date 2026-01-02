@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, ArrowRight, Check, AlertCircle, Plus } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Cliente } from '@/types/cliente'
+import { salvarClienteAutomatico } from '@/lib/cliente-manager'
 
 type TipoServico = 'Portão' | 'Estrutura metálica' | 'Toldo' | 'Outro'
 type Modelo = 'Portão de correr' | 'Portão basculante' | 'Estrutura simples' | 'Toldo fixo' | 'Toldo retrátil' | 'Outro'
@@ -198,11 +199,14 @@ export default function NovoOrcamento() {
       return
     }
 
+    // Salvar cliente automaticamente e obter o ID (novo ou existente)
+    const clienteId = salvarClienteAutomatico(dados.cliente, dados.clienteId)
+
     const novoOrcamento = {
       id: Date.now().toString(),
       data: new Date().toISOString(),
       cliente: dados.cliente.nome,
-      clienteId: dados.clienteId,
+      clienteId: clienteId, // Usar o ID retornado pela função
       valor: dados.valorFinal,
       status,
       tipoServico: dados.tipoServico,

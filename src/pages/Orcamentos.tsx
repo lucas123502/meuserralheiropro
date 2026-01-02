@@ -10,6 +10,7 @@ import { visualizarPDF, baixarPDF } from '@/lib/pdf-generator'
 import PDFModal from '@/components/PDFModal'
 import { useToast } from '@/hooks/use-toast'
 import { Pedido } from '@/types/pedido'
+import { salvarClienteAutomatico } from '@/lib/cliente-manager'
 
 interface Orcamento {
   id: string
@@ -78,10 +79,20 @@ export default function Orcamentos() {
       return
     }
 
+    // Garantir que o cliente está salvo antes de converter em pedido
+    let clienteId = orcamento.clienteId || ''
+
+    if (orcamento.clienteCompleto && orcamento.clienteCompleto.nome) {
+      clienteId = salvarClienteAutomatico(
+        orcamento.clienteCompleto,
+        orcamento.clienteId
+      )
+    }
+
     const novoPedido: Pedido = {
       id: Date.now().toString(),
       orcamentoId: orcamento.id,
-      clienteId: orcamento.clienteId || '',
+      clienteId: clienteId,
       clienteNome: orcamento.cliente,
       tipoServico: orcamento.tipoServico,
       modelo: orcamento.modelo,
@@ -96,9 +107,9 @@ export default function Orcamentos() {
     pedidos.push(novoPedido)
     localStorage.setItem('pedidos', JSON.stringify(pedidos))
 
-    // Marcar orçamento como convertido
+    // Marcar orçamento como convertido e atualizar clienteId se necessário
     const orcamentosAtualizados = orcamentos.map(o =>
-      o.id === orcamento.id ? { ...o, convertidoEmPedido: true } : o
+      o.id === orcamento.id ? { ...o, convertidoEmPedido: true, clienteId } : o
     )
     setOrcamentos(orcamentosAtualizados)
     localStorage.setItem('orcamentos', JSON.stringify(orcamentosAtualizados))
