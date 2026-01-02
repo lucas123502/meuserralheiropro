@@ -46,6 +46,17 @@ export default function NovoOrcamento() {
     observacoes: ''
   })
 
+  // Helper function para garantir string segura para inputs
+  const toSafeInputValue = (value: string | number): string => {
+    if (typeof value === 'string') {
+      return value
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value.toString()
+    }
+    return ''
+  }
+
   const VALOR_POR_M2 = 150
 
   const tiposServico: TipoServico[] = ['Portão', 'Estrutura metálica', 'Toldo', 'Outro']
@@ -235,11 +246,25 @@ export default function NovoOrcamento() {
                     step="0.01"
                     min="0"
                     placeholder="Ex: 3.5"
-                    value={dados.medidas.largura}
-                    onChange={(e) => setDados({
-                      ...dados,
-                      medidas: { ...dados.medidas, largura: e.target.value }
-                    })}
+                    value={toSafeInputValue(dados.medidas.largura)}
+                    onChange={(e) => {
+                      const valor = e.target.value
+                      setDados({
+                        ...dados,
+                        medidas: { ...dados.medidas, largura: valor }
+                      })
+                    }}
+                    onBlur={(e) => {
+                      // Ao sair do campo, limpar se inválido
+                      const valor = e.target.value
+                      const numero = parseFloat(valor)
+                      if (valor === '' || !Number.isFinite(numero) || numero < 0) {
+                        setDados({
+                          ...dados,
+                          medidas: { ...dados.medidas, largura: '' }
+                        })
+                      }
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -250,11 +275,25 @@ export default function NovoOrcamento() {
                     step="0.01"
                     min="0"
                     placeholder="Ex: 2.0"
-                    value={dados.medidas.altura}
-                    onChange={(e) => setDados({
-                      ...dados,
-                      medidas: { ...dados.medidas, altura: e.target.value }
-                    })}
+                    value={toSafeInputValue(dados.medidas.altura)}
+                    onChange={(e) => {
+                      const valor = e.target.value
+                      setDados({
+                        ...dados,
+                        medidas: { ...dados.medidas, altura: valor }
+                      })
+                    }}
+                    onBlur={(e) => {
+                      // Ao sair do campo, limpar se inválido
+                      const valor = e.target.value
+                      const numero = parseFloat(valor)
+                      if (valor === '' || !Number.isFinite(numero) || numero < 0) {
+                        setDados({
+                          ...dados,
+                          medidas: { ...dados.medidas, altura: '' }
+                        })
+                      }
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -264,19 +303,19 @@ export default function NovoOrcamento() {
                     type="number"
                     min="1"
                     placeholder="Ex: 1"
-                    value={dados.medidas.quantidade}
+                    value={toSafeInputValue(dados.medidas.quantidade)}
                     onChange={(e) => {
                       const valor = e.target.value
-                      const numero = parseInt(valor)
-                      if (valor === '' || (numero >= 1 && !isNaN(numero))) {
-                        setDados({
-                          ...dados,
-                          medidas: { ...dados.medidas, quantidade: valor }
-                        })
-                      }
+                      setDados({
+                        ...dados,
+                        medidas: { ...dados.medidas, quantidade: valor }
+                      })
                     }}
                     onBlur={(e) => {
-                      if (e.target.value === '' || parseInt(e.target.value) < 1) {
+                      // Ao sair do campo, definir 1 se inválido
+                      const valor = e.target.value
+                      const numero = parseInt(valor)
+                      if (valor === '' || !Number.isFinite(numero) || numero < 1) {
                         setDados({
                           ...dados,
                           medidas: { ...dados.medidas, quantidade: '1' }
@@ -290,11 +329,17 @@ export default function NovoOrcamento() {
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    Área total: {(
-                      parseFloat(dados.medidas.largura) *
-                      parseFloat(dados.medidas.altura) *
-                      parseInt(dados.medidas.quantidade)
-                    ).toFixed(2)} m²
+                    Área total: {(() => {
+                      const largura = parseFloat(dados.medidas.largura)
+                      const altura = parseFloat(dados.medidas.altura)
+                      const quantidade = parseInt(dados.medidas.quantidade)
+                      const area = largura * altura * quantidade
+
+                      if (Number.isFinite(area)) {
+                        return area.toFixed(2)
+                      }
+                      return '0.00'
+                    })()} m²
                   </AlertDescription>
                 </Alert>
               )}
@@ -327,17 +372,34 @@ export default function NovoOrcamento() {
                     <div>
                       <div className="text-sm text-gray-600">Medidas</div>
                       <div className="font-semibold">
-                        {parseFloat(dados.medidas.largura).toFixed(2)}m × {parseFloat(dados.medidas.altura).toFixed(2)}m × {dados.medidas.quantidade}
+                        {(() => {
+                          const largura = parseFloat(dados.medidas.largura)
+                          const altura = parseFloat(dados.medidas.altura)
+                          const quantidade = dados.medidas.quantidade
+
+                          if (Number.isFinite(largura) && Number.isFinite(altura)) {
+                            return `${largura.toFixed(2)}m × ${altura.toFixed(2)}m × ${quantidade}`
+                          }
+                          return 'Não informado'
+                        })()}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600">Área Total</div>
                       <div className="font-semibold">
-                        {validarMedidas() ? (
-                          parseFloat(dados.medidas.largura) *
-                          parseFloat(dados.medidas.altura) *
-                          parseInt(dados.medidas.quantidade)
-                        ).toFixed(2) : '0.00'} m²
+                        {(() => {
+                          if (validarMedidas()) {
+                            const largura = parseFloat(dados.medidas.largura)
+                            const altura = parseFloat(dados.medidas.altura)
+                            const quantidade = parseInt(dados.medidas.quantidade)
+                            const area = largura * altura * quantidade
+
+                            if (Number.isFinite(area)) {
+                              return `${area.toFixed(2)} m²`
+                            }
+                          }
+                          return '0.00 m²'
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -350,15 +412,46 @@ export default function NovoOrcamento() {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={isNaN(dados.valorFinal) ? '' : dados.valorFinal}
+                    value={(() => {
+                      // SEMPRE retornar string para o input
+                      if (Number.isFinite(dados.valorFinal)) {
+                        return dados.valorFinal.toString()
+                      }
+                      return ''
+                    })()}
                     onChange={(e) => {
-                      const valor = parseFloat(e.target.value)
-                      setDados({ ...dados, valorFinal: isNaN(valor) ? 0 : valor })
+                      const valor = e.target.value
+                      const numero = parseFloat(valor)
+
+                      // Se campo vazio, deixar como string vazia temporariamente
+                      if (valor === '') {
+                        setDados({ ...dados, valorFinal: 0 })
+                        return
+                      }
+
+                      // Só atualizar se for número válido
+                      if (Number.isFinite(numero) && numero >= 0) {
+                        setDados({ ...dados, valorFinal: numero })
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // Ao sair do campo, garantir valor válido
+                      const valor = e.target.value
+                      const numero = parseFloat(valor)
+
+                      if (valor === '' || !Number.isFinite(numero) || numero < 0) {
+                        // Se inválido, usar valor calculado automaticamente
+                        const valorCalculado = calcularValor()
+                        setDados({ ...dados, valorFinal: valorCalculado })
+                      }
                     }}
                     className="text-2xl font-bold"
                   />
                   <p className="text-sm text-gray-600">
-                    Valor calculado automaticamente: R$ {calcularValor().toFixed(2)}
+                    Valor calculado automaticamente: R$ {(() => {
+                      const valorCalc = calcularValor()
+                      return Number.isFinite(valorCalc) ? valorCalc.toFixed(2) : '0.00'
+                    })()}
                   </p>
                 </div>
               </div>

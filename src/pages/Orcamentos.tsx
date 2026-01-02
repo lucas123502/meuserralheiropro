@@ -126,10 +126,13 @@ export default function Orcamentos() {
                   <div className="text-right">
                     <div className="flex items-center gap-1 text-2xl font-bold text-gray-900">
                       <DollarSign className="h-6 w-6" />
-                      {orcamento.valor.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                      })}
+                      {(() => {
+                        const valorSeguro = Number.isFinite(orcamento.valor) ? orcamento.valor : 0
+                        return valorSeguro.toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })
+                      })()}
                     </div>
                   </div>
                 </div>

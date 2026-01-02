@@ -94,11 +94,20 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
   const largura = parseFloat(orcamento.medidas.largura)
   const altura = parseFloat(orcamento.medidas.altura)
   const quantidade = parseInt(orcamento.medidas.quantidade)
-  const area = largura * altura * quantidade
 
-  doc.text(`Medidas: ${largura}m (largura) × ${altura}m (altura) × ${quantidade} unidade(s)`, 15, y)
+  // Validar valores antes de usar
+  const larguraValida = Number.isFinite(largura) ? largura : 0
+  const alturaValida = Number.isFinite(altura) ? altura : 0
+  const quantidadeValida = Number.isFinite(quantidade) ? quantidade : 0
+  const area = larguraValida * alturaValida * quantidadeValida
+
+  doc.text(
+    `Medidas: ${larguraValida.toFixed(2)}m (largura) × ${alturaValida.toFixed(2)}m (altura) × ${quantidadeValida} unidade(s)`,
+    15,
+    y
+  )
   y += 6
-  doc.text(`Área Total: ${area.toFixed(2)} m²`, 15, y)
+  doc.text(`Área Total: ${Number.isFinite(area) ? area.toFixed(2) : '0.00'} m²`, 15, y)
   y += 15
 
   // Observações (se houver)
@@ -126,7 +135,8 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
 
   doc.setFontSize(18)
   doc.setTextColor(0, 100, 0)
-  const valorFormatado = `R$ ${orcamento.valor.toLocaleString('pt-BR', {
+  const valorSeguro = Number.isFinite(orcamento.valor) ? orcamento.valor : 0
+  const valorFormatado = `R$ ${valorSeguro.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })}`
