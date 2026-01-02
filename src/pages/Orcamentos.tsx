@@ -7,6 +7,7 @@ import { Plus, FileText, Calendar, DollarSign, Eye, Download } from 'lucide-reac
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { visualizarPDF, baixarPDF } from '@/lib/pdf-generator'
+import PDFModal from '@/components/PDFModal'
 
 interface Orcamento {
   id: string
@@ -31,6 +32,9 @@ interface Orcamento {
 
 export default function Orcamentos() {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
+  const [modalAberto, setModalAberto] = useState(false)
+  const [pdfUrl, setPdfUrl] = useState('')
+  const [tituloModal, setTituloModal] = useState('')
 
   useEffect(() => {
     // Carregar orçamentos do localStorage
@@ -40,6 +44,24 @@ export default function Orcamentos() {
       setOrcamentos(parsed.map((o: any) => ({ ...o, data: new Date(o.data) })))
     }
   }, [])
+
+  const handleVisualizarPDF = (orcamento: Orcamento) => {
+    const url = visualizarPDF(orcamento)
+    setPdfUrl(url)
+    setTituloModal(orcamento.cliente || 'Cliente sem nome')
+    setModalAberto(true)
+  }
+
+  const handleFecharModal = () => {
+    setModalAberto(false)
+    // Limpar URL após um pequeno delay para dar tempo da animação de fechamento
+    setTimeout(() => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl)
+        setPdfUrl('')
+      }
+    }, 300)
+  }
 
   if (orcamentos.length === 0) {
     return (
@@ -141,7 +163,7 @@ export default function Orcamentos() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => visualizarPDF(orcamento)}
+                    onClick={() => handleVisualizarPDF(orcamento)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     Visualizar PDF
@@ -160,6 +182,13 @@ export default function Orcamentos() {
           </Card>
         ))}
       </div>
+
+      <PDFModal
+        open={modalAberto}
+        onClose={handleFecharModal}
+        pdfUrl={pdfUrl}
+        titulo={tituloModal}
+      />
     </div>
   )
 }

@@ -174,9 +174,9 @@ export function baixarPDF(orcamento: OrcamentoPDF) {
   doc.save(nomeArquivo)
 }
 
-export function visualizarPDF(orcamento: OrcamentoPDF) {
+export function visualizarPDF(orcamento: OrcamentoPDF): string {
   const doc = gerarPDFOrcamento(orcamento)
   const pdfBlob = doc.output('blob')
   const pdfUrl = URL.createObjectURL(pdfBlob)
-  window.open(pdfUrl, '_blank')
+  return pdfUrl
 }
