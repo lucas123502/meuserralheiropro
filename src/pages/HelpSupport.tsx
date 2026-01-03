@@ -162,8 +162,10 @@ export default function HelpSupport() {
   }
 
   // Validação do campo obrigatório
+  // "needs" e "other" exigem texto obrigatório
+  // "closing" é opcional mas permite envio mesmo vazio
   const isFeedbackRequired = selectedReason === 'needs' || selectedReason === 'other'
-  const canSubmitFeedback = !isFeedbackRequired || (isFeedbackRequired && feedbackText.trim().length > 0)
+  const canSubmitFeedback = selectedReason === 'closing' || !isFeedbackRequired || (isFeedbackRequired && feedbackText.trim().length > 0)
 
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-6xl">
@@ -322,7 +324,7 @@ export default function HelpSupport() {
             <CardHeader>
               <CardTitle>Solicitação de Cancelamento</CardTitle>
               <CardDescription>
-                Sentiremos sua falta! Mas antes, queremos entender melhor e talvez possamos ajudar
+                Antes de prosseguir com o cancelamento, queremos entender o motivo para tentar te ajudar
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -375,31 +377,38 @@ export default function HelpSupport() {
                   {/* ETAPA 2: Conteúdo de Retenção Dinâmico */}
                   {showRetentionContent && selectedReason && !feedbackSent && (
                     <div className="border-t pt-6">
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
                         <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                          <AlertCircle className="h-5 w-5 text-blue-600" />
-                          Talvez possamos te ajudar antes de cancelar
+                          <AlertCircle className="h-5 w-5" />
+                          Como podemos te ajudar antes de cancelar
                         </h3>
 
                         {/* Resposta: Preço / Financeiro */}
                         {selectedReason === 'price' && (
                           <div className="space-y-4">
-                            <p className="text-sm text-muted-foreground">
-                              Entendemos a preocupação com o custo. Muitos usuários aumentam suas vendas usando o Meu Serralheiro Pro para criar orçamentos mais rápidos, profissionais e fechar mais pedidos.
+                            <p className="text-sm">
+                              Entendemos a preocupação com o custo. Muitos usuários aumentam suas vendas usando o Meu Serralheiro Pro para criar orçamentos mais rápidos e profissionais, fechando mais pedidos.
                             </p>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => setActiveTab('videos')}
-                              >
-                                <TrendingUp className="h-4 w-4 mr-2" />
-                                Ver como aumentar vendas
-                              </Button>
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium">Recursos que podem ajudar você a vender mais:</p>
+                              <ul className="text-sm space-y-1 ml-4 list-disc">
+                                <li>Vídeos tutoriais de como usar o app</li>
+                                <li>Ideias de conteúdo para suas redes sociais</li>
+                                <li>Mensagens prontas para WhatsApp</li>
+                                <li>Catálogo profissional de serviços</li>
+                              </ul>
                             </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full sm:w-auto"
+                              onClick={() => setActiveTab('videos')}
+                            >
+                              <TrendingUp className="h-4 w-4 mr-2" />
+                              Explorar recursos para aumentar vendas
+                            </Button>
                             <p className="text-xs text-muted-foreground italic">
-                              Dica: Explore Ideias & Conteúdo, Mensagens WhatsApp e Catálogo de serviços
+                              Recomendamos explorar todos os recursos antes de cancelar.
                             </p>
                           </div>
                         )}
@@ -407,8 +416,8 @@ export default function HelpSupport() {
                         {/* Resposta: Difícil de usar */}
                         {selectedReason === 'difficult' && (
                           <div className="space-y-4">
-                            <p className="text-sm text-muted-foreground">
-                              O aplicativo foi pensado para ser simples, mas sabemos que no início podem surgir dúvidas.
+                            <p className="text-sm">
+                              O aplicativo foi pensado para ser simples e intuitivo. Sabemos que no início podem surgir dúvidas, mas temos materiais que ajudam você a aprender rapidamente.
                             </p>
                             <Button
                               type="button"
@@ -417,10 +426,10 @@ export default function HelpSupport() {
                               onClick={() => setActiveTab('videos')}
                             >
                               <BookOpen className="h-4 w-4 mr-2" />
-                              Assistir vídeos rápidos de como usar
+                              Assistir vídeos de como usar
                             </Button>
                             <p className="text-xs text-muted-foreground italic">
-                              A maioria dos usuários aprende o básico em poucos minutos.
+                              A maioria dos usuários aprende o básico em poucos minutos com nossos vídeos.
                             </p>
                           </div>
                         )}
@@ -428,8 +437,8 @@ export default function HelpSupport() {
                         {/* Resposta: Não atendeu necessidades */}
                         {selectedReason === 'needs' && (
                           <div className="space-y-4">
-                            <p className="text-sm text-muted-foreground mb-3">
-                              Nossa equipe analisa essas necessidades para melhorar o aplicativo continuamente.
+                            <p className="text-sm mb-3">
+                              Nossa equipe analisa todas as necessidades relatadas para melhorar o aplicativo continuamente. Queremos entender melhor seu caso.
                             </p>
                             <div>
                               <Label htmlFor="needsText" className="text-sm font-semibold">
@@ -445,17 +454,29 @@ export default function HelpSupport() {
                               />
                             </div>
                             <p className="text-xs text-muted-foreground italic">
-                              Se for possível, entraremos em contato para entender melhor e tentar resolver antes do cancelamento.
+                              Nossa equipe pode entrar em contato para entender melhor e tentar resolver antes do cancelamento.
                             </p>
                           </div>
                         )}
 
                         {/* Resposta: Encerrando atividade */}
                         {selectedReason === 'closing' && (
-                          <div className="space-y-3">
-                            <p className="text-sm text-muted-foreground">
-                              Entendemos sua decisão. Sentimos muito por isso e agradecemos por ter usado o Meu Serralheiro Pro.
+                          <div className="space-y-4">
+                            <p className="text-sm">
+                              Entendemos sua decisão e agradecemos por ter usado o Meu Serralheiro Pro.
                             </p>
+                            <div>
+                              <Label htmlFor="closingText" className="text-sm font-semibold">
+                                Deseja deixar um comentário ou feedback? (opcional)
+                              </Label>
+                              <Textarea
+                                id="closingText"
+                                value={feedbackText}
+                                onChange={(e) => setFeedbackText(e.target.value)}
+                                placeholder="Compartilhe sua experiência com o aplicativo, se desejar..."
+                                className="min-h-28 mt-2"
+                              />
+                            </div>
                           </div>
                         )}
 
@@ -479,16 +500,29 @@ export default function HelpSupport() {
                         )}
                       </div>
 
-                      {/* ETAPA 3: Enviar Feedback */}
+                      {/* ETAPA 3: Botões de ação conforme o motivo */}
                       <div className="mt-4">
-                        <Button
-                          onClick={handleFeedbackSubmit}
-                          disabled={!canSubmitFeedback}
-                          className="w-full sm:w-auto"
-                        >
-                          <Send className="h-4 w-4 mr-2" />
-                          Enviar feedback e continuar
-                        </Button>
+                        {/* Para "Preço" e "Difícil de usar" - NÃO mostrar botão de continuar, apenas redirecionar */}
+                        {(selectedReason === 'price' || selectedReason === 'difficult') && (
+                          <Alert className="bg-gray-50 border-gray-200">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                              Explore os recursos sugeridos acima. Se ainda assim desejar cancelar, volte aqui e escolha "Outro motivo" para prosseguir.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        {/* Para outros motivos - Mostrar botão de enviar feedback */}
+                        {selectedReason !== 'price' && selectedReason !== 'difficult' && (
+                          <Button
+                            onClick={handleFeedbackSubmit}
+                            disabled={!canSubmitFeedback}
+                            className="w-full sm:w-auto"
+                          >
+                            <Send className="h-4 w-4 mr-2" />
+                            Enviar feedback e continuar
+                          </Button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -496,16 +530,16 @@ export default function HelpSupport() {
                   {/* ETAPA 4: Confirmação Final do Cancelamento */}
                   {feedbackSent && (
                     <div className="border-t pt-6 space-y-4">
-                      <Alert className="bg-green-50 border-green-200">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        <AlertDescription className="text-green-800">
+                      <Alert className="border-gray-200">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <AlertDescription>
                           Obrigado pelo feedback. Isso nos ajuda a melhorar o Meu Serralheiro Pro.
                         </AlertDescription>
                       </Alert>
 
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-5">
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Se ainda assim deseja cancelar, clique no botão abaixo. Lamentamos vê-lo partir.
+                      <div className="bg-gray-50 border border-gray-300 rounded-lg p-5">
+                        <p className="text-sm mb-4">
+                          Se ainda assim deseja cancelar, clique no botão abaixo.
                         </p>
                         <Button
                           onClick={handleFinalCancellation}
