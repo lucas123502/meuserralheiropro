@@ -163,41 +163,92 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Portão',
     subcategorias: [
       {
-        id: 'sub-portao-residencial',
-        nome: 'Portão Residencial',
+        id: 'sub-portao-correr',
+        nome: 'Portão de correr',
         modelos: [
           {
-            id: 'mod-portao-correr',
-            nome: 'Portão de Correr',
-            descricao: 'Portão deslizante lateral, ideal para garagens',
+            id: 'mod-portao-correr-padrao',
+            nome: 'Portão de Correr Padrão',
+            descricao: 'Portão deslizante lateral',
             precoPorMetroQuadrado: 250.00,
             ativo: true
-          },
+          }
+        ]
+      },
+      {
+        id: 'sub-portao-basculante',
+        nome: 'Portão basculante / elevação',
+        modelos: [
           {
-            id: 'mod-portao-basculante',
+            id: 'mod-portao-basculante-padrao',
             nome: 'Portão Basculante',
-            descricao: 'Portão com abertura vertical, economia de espaço',
+            descricao: 'Portão com abertura vertical',
             precoPorMetroQuadrado: 300.00,
             ativo: true
-          },
+          }
+        ]
+      },
+      {
+        id: 'sub-portao-abrir-1folha',
+        nome: 'Portão abrir 1 folha',
+        modelos: [
           {
-            id: 'mod-portao-pivotante',
-            nome: 'Portão Pivotante',
-            descricao: 'Abertura lateral em pivô central',
+            id: 'mod-portao-1folha-padrao',
+            nome: 'Portão 1 Folha',
+            descricao: 'Portão com abertura em 1 folha',
             precoPorMetroQuadrado: 280.00,
             ativo: true
           }
         ]
       },
       {
-        id: 'sub-portao-industrial',
-        nome: 'Portão Industrial',
+        id: 'sub-portao-abrir-2folhas',
+        nome: 'Portão abrir 2 folhas',
         modelos: [
           {
-            id: 'mod-portao-industrial-grande',
-            nome: 'Portão Industrial Grande',
-            descricao: 'Para galpões e áreas industriais',
-            precoPorMetroQuadrado: 350.00,
+            id: 'mod-portao-2folhas-padrao',
+            nome: 'Portão 2 Folhas',
+            descricao: 'Portão com abertura em 2 folhas',
+            precoPorMetroQuadrado: 290.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-portao-social',
+        nome: 'Portão social',
+        modelos: [
+          {
+            id: 'mod-portao-social-padrao',
+            nome: 'Portão Social',
+            descricao: 'Portão para entrada de pedestres',
+            precoPorMetroQuadrado: 220.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-porta-ferro',
+        nome: 'Porta de ferro',
+        modelos: [
+          {
+            id: 'mod-porta-ferro-padrao',
+            nome: 'Porta de Ferro',
+            descricao: 'Porta completa em ferro',
+            precoPorMetroQuadrado: 200.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-porta-ferro-madeira',
+        nome: 'Porta de ferro e madeira',
+        modelos: [
+          {
+            id: 'mod-porta-ferro-madeira-padrao',
+            nome: 'Porta Ferro e Madeira',
+            descricao: 'Porta combinada ferro com madeira',
+            precoPorMetroQuadrado: 240.00,
             ativo: true
           }
         ]
@@ -272,7 +323,21 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
   {
     id: 'cat-servico-solda',
     nome: 'Serviço com Solda',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-servico-solda-geral',
+        nome: 'Serviço de Solda',
+        modelos: [
+          {
+            id: 'mod-solda-hora',
+            nome: 'Serviço de Solda',
+            descricao: 'Serviço de solda por hora',
+            precoPorMetroQuadrado: 100.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-corrimao',
@@ -303,17 +368,59 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
   {
     id: 'cat-carretinha',
     nome: 'Carretinha',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-carretinha-pequena',
+        nome: 'Carretinha Pequena',
+        modelos: [
+          {
+            id: 'mod-carretinha-padrao',
+            nome: 'Carretinha Padrão',
+            descricao: 'Carretinha para transporte pequeno',
+            precoPorMetroQuadrado: 500.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-moveis-industriais',
     nome: 'Móveis Industriais',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-moveis-escritorio',
+        nome: 'Móveis para Escritório',
+        modelos: [
+          {
+            id: 'mod-mesa-industrial',
+            nome: 'Mesa Industrial',
+            descricao: 'Mesa em estrutura metálica',
+            precoPorMetroQuadrado: 400.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-chales',
     nome: 'Chalés',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-chale-madeira',
+        nome: 'Chalé de Madeira',
+        modelos: [
+          {
+            id: 'mod-chale-pequeno',
+            nome: 'Chalé Pequeno',
+            descricao: 'Chalé estrutura metálica e madeira',
+            precoPorMetroQuadrado: 600.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-grade-protecao',
@@ -344,22 +451,78 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
   {
     id: 'cat-reformas',
     nome: 'Reformas em Geral',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-reforma-residencial',
+        nome: 'Reforma Residencial',
+        modelos: [
+          {
+            id: 'mod-reforma-geral',
+            nome: 'Reforma Geral',
+            descricao: 'Serviço de reforma residencial',
+            precoPorMetroQuadrado: 150.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-calha-rufo',
     nome: 'Calha e Rufo',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-calha',
+        nome: 'Calha',
+        modelos: [
+          {
+            id: 'mod-calha-aluminio',
+            nome: 'Calha Alumínio',
+            descricao: 'Calha em alumínio',
+            precoPorMetroQuadrado: 80.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-gaiola-trilha',
     nome: 'Gaiola de Trilha',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-gaiola',
+        nome: 'Gaiola Completa',
+        modelos: [
+          {
+            id: 'mod-gaiola-padrao',
+            nome: 'Gaiola Padrão',
+            descricao: 'Gaiola de proteção para veículo',
+            precoPorMetroQuadrado: 700.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-outros',
     nome: 'Outros',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-outros',
+        nome: 'Serviços Diversos',
+        modelos: [
+          {
+            id: 'mod-servico-personalizado',
+            nome: 'Serviço Personalizado',
+            descricao: 'Serviço sob medida',
+            precoPorMetroQuadrado: 200.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   }
 ]
 
