@@ -3,6 +3,19 @@
 // ============================================
 
 /**
+ * Serviço personalizado criado pelo usuário na categoria "Outros"
+ */
+export interface ServicoPersonalizado {
+  id: string
+  nomeServico: string
+  nomeSubcategoria?: string
+  tipoCobranca: 'fixo' | 'por_m2'
+  valorBase: number
+  observacoes?: string
+  criadoEm: string
+}
+
+/**
  * Categoria principal de serviços/produtos
  */
 export interface CategoriaOrcamento {
@@ -790,4 +803,42 @@ export function criarOrcamentoVazio(clienteId: string): Orcamento {
     valorTotal: 0,
     criadoEm: new Date()
   }
+}
+
+// ============================================
+// FUNÇÕES PARA SERVIÇOS PERSONALIZADOS
+// ============================================
+
+/**
+ * Obtém serviços personalizados salvos pelo usuário
+ */
+export function obterServicosPersonalizados(): ServicoPersonalizado[] {
+  const servicosStr = localStorage.getItem('servicosPersonalizados')
+  return servicosStr ? JSON.parse(servicosStr) : []
+}
+
+/**
+ * Salva um novo serviço personalizado
+ */
+export function salvarServicoPersonalizado(servico: Omit<ServicoPersonalizado, 'id' | 'criadoEm'>): ServicoPersonalizado {
+  const servicoCompleto: ServicoPersonalizado = {
+    ...servico,
+    id: gerarId(),
+    criadoEm: new Date().toISOString()
+  }
+
+  const servicos = obterServicosPersonalizados()
+  servicos.push(servicoCompleto)
+  localStorage.setItem('servicosPersonalizados', JSON.stringify(servicos))
+
+  return servicoCompleto
+}
+
+/**
+ * Remove um serviço personalizado
+ */
+export function removerServicoPersonalizado(id: string): void {
+  const servicos = obterServicosPersonalizados()
+  const servicosFiltrados = servicos.filter(s => s.id !== id)
+  localStorage.setItem('servicosPersonalizados', JSON.stringify(servicosFiltrados))
 }
