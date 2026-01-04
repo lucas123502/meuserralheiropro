@@ -176,6 +176,45 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
         ]
       },
       {
+        id: 'sub-portao-correr-social-dentro',
+        nome: 'Portão de correr com portão social dentro',
+        modelos: [
+          {
+            id: 'mod-portao-correr-social-dentro',
+            nome: 'Portão de Correr com Social Interno',
+            descricao: 'Portão deslizante com porta social integrada',
+            precoPorMetroQuadrado: 280.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-portao-correr-social-fora',
+        nome: 'Portão de correr com portão social fora',
+        modelos: [
+          {
+            id: 'mod-portao-correr-social-fora',
+            nome: 'Portão de Correr com Social Externo',
+            descricao: 'Portão deslizante com porta social ao lado',
+            precoPorMetroQuadrado: 270.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-portao-correr-grades',
+        nome: 'Portão de correr com grades',
+        modelos: [
+          {
+            id: 'mod-portao-correr-grades',
+            nome: 'Portão de Correr com Grades',
+            descricao: 'Portão deslizante com detalhes em grades',
+            precoPorMetroQuadrado: 260.00,
+            ativo: true
+          }
+        ]
+      },
+      {
         id: 'sub-portao-basculante',
         nome: 'Portão basculante / elevação',
         modelos: [
@@ -190,7 +229,7 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
       },
       {
         id: 'sub-portao-abrir-1folha',
-        nome: 'Portão abrir 1 folha',
+        nome: 'Portão de abrir (1 folha)',
         modelos: [
           {
             id: 'mod-portao-1folha-padrao',
@@ -203,13 +242,52 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
       },
       {
         id: 'sub-portao-abrir-2folhas',
-        nome: 'Portão abrir 2 folhas',
+        nome: 'Portão de abrir (2 folhas)',
         modelos: [
           {
             id: 'mod-portao-2folhas-padrao',
             nome: 'Portão 2 Folhas',
             descricao: 'Portão com abertura em 2 folhas',
             precoPorMetroQuadrado: 290.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-portao-simples',
+        nome: 'Portão simples',
+        modelos: [
+          {
+            id: 'mod-portao-simples',
+            nome: 'Portão Simples',
+            descricao: 'Portão modelo básico',
+            precoPorMetroQuadrado: 220.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-portao-chapa',
+        nome: 'Portão de chapa',
+        modelos: [
+          {
+            id: 'mod-portao-chapa',
+            nome: 'Portão de Chapa',
+            descricao: 'Portão em chapa de aço',
+            precoPorMetroQuadrado: 270.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-portao-metalon',
+        nome: 'Portão de metalon',
+        modelos: [
+          {
+            id: 'mod-portao-metalon',
+            nome: 'Portão de Metalon',
+            descricao: 'Portão em estrutura metalon',
+            precoPorMetroQuadrado: 240.00,
             ativo: true
           }
         ]
@@ -223,6 +301,19 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
             nome: 'Portão Social',
             descricao: 'Portão para entrada de pedestres',
             precoPorMetroQuadrado: 220.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-portao-abrir-l',
+        nome: 'Portão de abrir em L',
+        modelos: [
+          {
+            id: 'mod-portao-abrir-l',
+            nome: 'Portão de Abrir em L',
+            descricao: 'Portão com abertura em formato L',
+            precoPorMetroQuadrado: 310.00,
             ativo: true
           }
         ]
@@ -260,21 +351,53 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Estrutura Metálica',
     subcategorias: [
       {
-        id: 'sub-cobertura',
-        nome: 'Cobertura Metálica',
+        id: 'sub-estrutura-telha-zinco',
+        nome: 'Estrutura metálica com telha de zinco',
         modelos: [
           {
-            id: 'mod-cobertura-simples',
-            nome: 'Cobertura Simples',
-            descricao: 'Estrutura básica para cobertura',
+            id: 'mod-estrutura-zinco',
+            nome: 'Estrutura com Telha de Zinco',
+            descricao: 'Estrutura metálica coberta com telha de zinco',
             precoPorMetroQuadrado: 180.00,
             ativo: true
-          },
+          }
+        ]
+      },
+      {
+        id: 'sub-estrutura-telha-sanduiche',
+        nome: 'Estrutura metálica com telha sanduíche',
+        modelos: [
           {
-            id: 'mod-cobertura-duas-aguas',
-            nome: 'Cobertura Duas Águas',
-            descricao: 'Estrutura com caimento bilateral',
+            id: 'mod-estrutura-sanduiche',
+            nome: 'Estrutura com Telha Sanduíche',
+            descricao: 'Estrutura metálica coberta com telha sanduíche',
             precoPorMetroQuadrado: 220.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-estrutura-telha-eternit',
+        nome: 'Estrutura metálica com telha Eternit',
+        modelos: [
+          {
+            id: 'mod-estrutura-eternit',
+            nome: 'Estrutura com Telha Eternit',
+            descricao: 'Estrutura metálica coberta com telha Eternit',
+            precoPorMetroQuadrado: 190.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-pe-direito-metalico',
+        nome: 'Pé-direito metálico',
+        modelos: [
+          {
+            id: 'mod-pe-direito',
+            nome: 'Pé-direito Metálico',
+            descricao: 'Coluna metálica de sustentação',
+            precoPorMetroQuadrado: 150.00,
             ativo: true
           }
         ]
@@ -286,19 +409,12 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Toldo',
     subcategorias: [
       {
-        id: 'sub-toldo-fixo',
-        nome: 'Toldo Fixo',
+        id: 'sub-toldo-lona',
+        nome: 'Toldo em lona',
         modelos: [
           {
-            id: 'mod-toldo-policarbonato',
-            nome: 'Toldo Policarbonato',
-            descricao: 'Estrutura metálica com cobertura em policarbonato',
-            precoPorMetroQuadrado: 150.00,
-            ativo: true
-          },
-          {
             id: 'mod-toldo-lona',
-            nome: 'Toldo com Lona',
+            nome: 'Toldo em Lona',
             descricao: 'Estrutura metálica com cobertura em lona',
             precoPorMetroQuadrado: 120.00,
             ativo: true
@@ -306,14 +422,40 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
         ]
       },
       {
+        id: 'sub-toldo-policarbonato',
+        nome: 'Toldo em policarbonato',
+        modelos: [
+          {
+            id: 'mod-toldo-policarbonato',
+            nome: 'Toldo em Policarbonato',
+            descricao: 'Estrutura metálica com cobertura em policarbonato',
+            precoPorMetroQuadrado: 150.00,
+            ativo: true
+          }
+        ]
+      },
+      {
         id: 'sub-toldo-retratil',
-        nome: 'Toldo Retrátil',
+        nome: 'Toldo retrátil',
         modelos: [
           {
             id: 'mod-toldo-retratil-manual',
             nome: 'Toldo Retrátil Manual',
             descricao: 'Sistema retrátil com acionamento manual',
             precoPorMetroQuadrado: 200.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-pergolado',
+        nome: 'Pergolado',
+        modelos: [
+          {
+            id: 'mod-pergolado',
+            nome: 'Pergolado',
+            descricao: 'Estrutura tipo pergolado',
+            precoPorMetroQuadrado: 180.00,
             ativo: true
           }
         ]
@@ -325,13 +467,13 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Serviço com Solda',
     subcategorias: [
       {
-        id: 'sub-servico-solda-geral',
-        nome: 'Serviço de Solda',
+        id: 'sub-solda-geral',
+        nome: 'Solda em geral',
         modelos: [
           {
-            id: 'mod-solda-hora',
+            id: 'mod-solda-geral',
             nome: 'Serviço de Solda',
-            descricao: 'Serviço de solda por hora',
+            descricao: 'Serviço de solda em geral',
             precoPorMetroQuadrado: 100.00,
             ativo: true
           }
@@ -344,19 +486,12 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Corrimão',
     subcategorias: [
       {
-        id: 'sub-corrimao-escada',
-        nome: 'Corrimão de Escada',
+        id: 'sub-corrimao-ferro',
+        nome: 'Corrimão de ferro',
         modelos: [
           {
-            id: 'mod-corrimao-inox',
-            nome: 'Corrimão Inox',
-            descricao: 'Corrimão em aço inoxidável',
-            precoPorMetroQuadrado: 280.00,
-            ativo: true
-          },
-          {
             id: 'mod-corrimao-ferro',
-            nome: 'Corrimão Ferro',
+            nome: 'Corrimão de Ferro',
             descricao: 'Corrimão em ferro com pintura',
             precoPorMetroQuadrado: 180.00,
             ativo: true
@@ -370,13 +505,26 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Carretinha',
     subcategorias: [
       {
-        id: 'sub-carretinha-pequena',
-        nome: 'Carretinha Pequena',
+        id: 'sub-carretinha-barco',
+        nome: 'Carretinha de barco',
         modelos: [
           {
-            id: 'mod-carretinha-padrao',
-            nome: 'Carretinha Padrão',
-            descricao: 'Carretinha para transporte pequeno',
+            id: 'mod-carretinha-barco',
+            nome: 'Carretinha de Barco',
+            descricao: 'Carretinha para transporte de barco',
+            precoPorMetroQuadrado: 600.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-carretinha-carga',
+        nome: 'Carretinha de carga',
+        modelos: [
+          {
+            id: 'mod-carretinha-carga',
+            nome: 'Carretinha de Carga',
+            descricao: 'Carretinha para transporte de carga',
             precoPorMetroQuadrado: 500.00,
             ativo: true
           }
@@ -389,14 +537,40 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Móveis Industriais',
     subcategorias: [
       {
-        id: 'sub-moveis-escritorio',
-        nome: 'Móveis para Escritório',
+        id: 'sub-artigos-decoracao',
+        nome: 'Artigos de decoração em geral',
+        modelos: [
+          {
+            id: 'mod-artigos-decoracao',
+            nome: 'Artigos de Decoração',
+            descricao: 'Peças decorativas em metal',
+            precoPorMetroQuadrado: 350.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-mesas',
+        nome: 'Mesas',
         modelos: [
           {
             id: 'mod-mesa-industrial',
             nome: 'Mesa Industrial',
             descricao: 'Mesa em estrutura metálica',
             precoPorMetroQuadrado: 400.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-prateleiras',
+        nome: 'Prateleiras',
+        modelos: [
+          {
+            id: 'mod-prateleira',
+            nome: 'Prateleira Metálica',
+            descricao: 'Prateleira em estrutura metálica',
+            precoPorMetroQuadrado: 300.00,
             ativo: true
           }
         ]
@@ -408,13 +582,13 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Chalés',
     subcategorias: [
       {
-        id: 'sub-chale-madeira',
-        nome: 'Chalé de Madeira',
+        id: 'sub-chale-estrutura-sanduiche',
+        nome: 'Chalé em estrutura metálica com telha sanduíche',
         modelos: [
           {
-            id: 'mod-chale-pequeno',
-            nome: 'Chalé Pequeno',
-            descricao: 'Chalé estrutura metálica e madeira',
+            id: 'mod-chale-sanduiche',
+            nome: 'Chalé com Telha Sanduíche',
+            descricao: 'Chalé em estrutura metálica com telha sanduíche',
             precoPorMetroQuadrado: 600.00,
             ativo: true
           }
@@ -427,21 +601,40 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Grade de Proteção',
     subcategorias: [
       {
-        id: 'sub-grade-janela',
-        nome: 'Grade para Janela',
+        id: 'sub-grade-tela',
+        nome: 'Grade de proteção com tela',
         modelos: [
           {
-            id: 'mod-grade-simples',
-            nome: 'Grade Simples',
-            descricao: 'Grade de proteção padrão para janelas',
-            precoPorMetroQuadrado: 120.00,
+            id: 'mod-grade-tela',
+            nome: 'Grade com Tela',
+            descricao: 'Grade de proteção com tela',
+            precoPorMetroQuadrado: 110.00,
             ativo: true
-          },
+          }
+        ]
+      },
+      {
+        id: 'sub-grade-ferro-macico',
+        nome: 'Grade de proteção com ferro maciço',
+        modelos: [
           {
-            id: 'mod-grade-ornamentada',
-            nome: 'Grade Ornamentada',
-            descricao: 'Grade com detalhes decorativos',
+            id: 'mod-grade-ferro-macico',
+            nome: 'Grade com Ferro Maciço',
+            descricao: 'Grade de proteção com ferro maciço',
             precoPorMetroQuadrado: 180.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-grade-metalon',
+        nome: 'Grade de proteção com metalon',
+        modelos: [
+          {
+            id: 'mod-grade-metalon',
+            nome: 'Grade com Metalon',
+            descricao: 'Grade de proteção com metalon',
+            precoPorMetroQuadrado: 140.00,
             ativo: true
           }
         ]
@@ -453,13 +646,13 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Reformas em Geral',
     subcategorias: [
       {
-        id: 'sub-reforma-residencial',
-        nome: 'Reforma Residencial',
+        id: 'sub-reforma-solda',
+        nome: 'Reforma com solda',
         modelos: [
           {
-            id: 'mod-reforma-geral',
-            nome: 'Reforma Geral',
-            descricao: 'Serviço de reforma residencial',
+            id: 'mod-reforma-solda',
+            nome: 'Reforma com Solda',
+            descricao: 'Serviço de reforma com solda',
             precoPorMetroQuadrado: 150.00,
             ativo: true
           }
@@ -477,9 +670,22 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
         modelos: [
           {
             id: 'mod-calha-aluminio',
-            nome: 'Calha Alumínio',
-            descricao: 'Calha em alumínio',
+            nome: 'Calha',
+            descricao: 'Calha para escoamento',
             precoPorMetroQuadrado: 80.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-rufo',
+        nome: 'Rufo',
+        modelos: [
+          {
+            id: 'mod-rufo',
+            nome: 'Rufo',
+            descricao: 'Rufo para acabamento',
+            precoPorMetroQuadrado: 70.00,
             ativo: true
           }
         ]
@@ -491,13 +697,13 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     nome: 'Gaiola de Trilha',
     subcategorias: [
       {
-        id: 'sub-gaiola',
-        nome: 'Gaiola Completa',
+        id: 'sub-gaiola-estrutura-metalica',
+        nome: 'Gaiola de estrutura metálica',
         modelos: [
           {
             id: 'mod-gaiola-padrao',
-            nome: 'Gaiola Padrão',
-            descricao: 'Gaiola de proteção para veículo',
+            nome: 'Gaiola de Estrutura Metálica',
+            descricao: 'Gaiola de proteção em estrutura metálica',
             precoPorMetroQuadrado: 700.00,
             ativo: true
           }
@@ -511,7 +717,7 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
     subcategorias: [
       {
         id: 'sub-outros',
-        nome: 'Serviços Diversos',
+        nome: 'Outros (campo livre para o usuário cadastrar manualmente)',
         modelos: [
           {
             id: 'mod-servico-personalizado',
