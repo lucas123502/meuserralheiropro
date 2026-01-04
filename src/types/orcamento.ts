@@ -43,6 +43,8 @@ export interface ModeloOrcamento {
   precoPorMetroQuadrado: number
   imagemUrl?: string
   ativo: boolean
+  personalizado?: boolean // Indica se foi criado pelo usuário
+  criadoPor?: string // ID do usuário (para futura implementação multi-usuário)
 }
 
 /**
@@ -841,4 +843,77 @@ export function removerServicoPersonalizado(id: string): void {
   const servicos = obterServicosPersonalizados()
   const servicosFiltrados = servicos.filter(s => s.id !== id)
   localStorage.setItem('servicosPersonalizados', JSON.stringify(servicosFiltrados))
+}
+
+// ============================================
+// FUNÇÕES PARA MODELOS PERSONALIZADOS
+// ============================================
+
+/**
+ * Obtém modelos personalizados salvos pelo usuário para uma subcategoria específica
+ */
+export function obterModelosPersonalizados(subcategoriaId: string): ModeloOrcamento[] {
+  const modelosStr = localStorage.getItem(`modelos_personalizados_${subcategoriaId}`)
+  return modelosStr ? JSON.parse(modelosStr) : []
+}
+
+/**
+ * Salva um novo modelo personalizado para uma subcategoria
+ */
+export function salvarModeloPersonalizado(
+  subcategoriaId: string,
+  modelo: Omit<ModeloOrcamento, 'id' | 'personalizado'>
+): ModeloOrcamento {
+  const modeloCompleto: ModeloOrcamento = {
+    ...modelo,
+    id: gerarId(),
+    personalizado: true,
+    ativo: true
+  }
+
+  const modelos = obterModelosPersonalizados(subcategoriaId)
+  modelos.push(modeloCompleto)
+  localStorage.setItem(`modelos_personalizados_${subcategoriaId}`, JSON.stringify(modelos))
+
+  return modeloCompleto
+}
+
+/**
+ * Remove um modelo personalizado
+ */
+export function removerModeloPersonalizado(subcategoriaId: string, modeloId: string): void {
+  const modelos = obterModelosPersonalizados(subcategoriaId)
+  const modelosFiltrados = modelos.filter(m => m.id !== modeloId)
+  localStorage.setItem(`modelos_personalizados_${subcategoriaId}`, JSON.stringify(modelosFiltrados))
+}
+
+/**
+ * Atualiza um modelo personalizado
+ */
+export function atualizarModeloPersonalizado(
+  subcategoriaId: string,
+  modeloId: string,
+  dadosAtualizados: Partial<ModeloOrcamento>
+): ModeloOrcamento | null {
+  const modelos = obterModelosPersonalizados(subcategoriaId)
+  const indice = modelos.findIndex(m => m.id === modeloId)
+
+  if (indice === -1) return null
+
+  modelos[indice] = { ...modelos[indice], ...dadosAtualizados }
+  localStorage.setItem(`modelos_personalizados_${subcategoriaId}`, JSON.stringify(modelos))
+
+  return modelos[indice]
+}
+
+/**
+ * Converte imagem para base64 para armazenamento
+ */
+export function converterImagemParaBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }

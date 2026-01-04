@@ -21,7 +21,8 @@ import {
   calcularValorModelo,
   obterServicosPersonalizados,
   salvarServicoPersonalizado,
-  removerServicoPersonalizado
+  removerServicoPersonalizado,
+  obterModelosPersonalizados
 } from '@/types/orcamento'
 
 // Interface para dados do cliente
@@ -157,6 +158,13 @@ export default function NovoOrcamento() {
   const selecionarSubcategoria = (subcategoria: SubcategoriaOrcamento) => {
     setSubcategoriaSelecionada(subcategoria)
     setEtapaAtual('modelo')
+  }
+
+  // Obter todos os modelos (padrão + personalizados) da subcategoria
+  const obterTodosModelos = (subcategoria: SubcategoriaOrcamento): ModeloOrcamento[] => {
+    const modelosPadrao = subcategoria.modelos.filter(m => m.ativo)
+    const modelosPersonalizados = obterModelosPersonalizados(subcategoria.id)
+    return [...modelosPadrao, ...modelosPersonalizados]
   }
 
   const selecionarModelo = (modelo: ModeloOrcamento) => {
@@ -740,49 +748,69 @@ export default function NovoOrcamento() {
 
             {/* ETAPA 3: Modelos */}
             {etapaAtual === 'modelo' && subcategoriaSelecionada && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {subcategoriaSelecionada.modelos
-                  .filter((modelo) => modelo.ativo)
-                  .map((modelo) => (
-                    <button
-                      key={modelo.id}
-                      onClick={() => selecionarModelo(modelo)}
-                      className="group border-2 border-gray-200 rounded-lg hover:border-black transition-all text-left bg-white hover:shadow-md overflow-hidden"
-                    >
-                      {/* Imagem do modelo */}
-                      {modelo.imagemUrl ? (
-                        <div className="aspect-video bg-gray-100 relative">
-                          <img
-                            src={modelo.imagemUrl}
-                            alt={modelo.nome}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="aspect-video bg-gray-100 flex items-center justify-center">
-                          <Grid3x3 className="h-12 w-12 text-gray-300" />
-                        </div>
-                      )}
-
-                      {/* Info do modelo */}
-                      <div className="p-4">
-                        <h4 className="font-semibold text-lg group-hover:text-black mb-1">
-                          {modelo.nome}
-                        </h4>
-                        {modelo.descricao && (
-                          <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                            {modelo.descricao}
-                          </p>
+              <div className="space-y-4">
+                {obterTodosModelos(subcategoriaSelecionada).length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                    <Grid3x3 className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-600 mb-2">Nenhum modelo disponível nesta subcategoria</p>
+                    <p className="text-sm text-gray-500">
+                      Você pode criar modelos personalizados na página de gerenciamento
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {obterTodosModelos(subcategoriaSelecionada).map((modelo) => (
+                      <button
+                        key={modelo.id}
+                        onClick={() => selecionarModelo(modelo)}
+                        className="group border-2 border-gray-200 rounded-lg hover:border-black transition-all text-left bg-white hover:shadow-md overflow-hidden"
+                      >
+                        {/* Imagem do modelo */}
+                        {modelo.imagemUrl ? (
+                          <div className="aspect-video bg-gray-100 relative">
+                            <img
+                              src={modelo.imagemUrl}
+                              alt={modelo.nome}
+                              className="w-full h-full object-cover"
+                            />
+                            {modelo.personalizado && (
+                              <Badge className="absolute top-2 right-2 bg-black/70 text-white">
+                                Seu Modelo
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                            <Grid3x3 className="h-12 w-12 text-gray-300" />
+                            {modelo.personalizado && (
+                              <Badge className="absolute top-2 right-2 bg-black/70 text-white">
+                                Seu Modelo
+                              </Badge>
+                            )}
+                          </div>
                         )}
-                        <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="font-mono">
-                            R$ {modelo.precoPorMetroQuadrado.toFixed(2)}/m²
-                          </Badge>
-                          <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-black" />
+
+                        {/* Info do modelo */}
+                        <div className="p-4">
+                          <h4 className="font-semibold text-lg group-hover:text-black mb-1">
+                            {modelo.nome}
+                          </h4>
+                          {modelo.descricao && (
+                            <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                              {modelo.descricao}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <Badge variant="secondary" className="font-mono">
+                              R$ {modelo.precoPorMetroQuadrado.toFixed(2)}/m²
+                            </Badge>
+                            <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-black" />
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

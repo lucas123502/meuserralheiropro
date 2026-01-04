@@ -5,6 +5,7 @@ import MainLayout from '@/components/layout/MainLayout'
 import InitialRedirect from '@/components/InitialRedirect'
 import Orcamentos from '@/pages/Orcamentos'
 import NovoOrcamento from '@/pages/NovoOrcamento'
+import GerenciarModelos from '@/pages/GerenciarModelos'
 import Pedidos from '@/pages/Pedidos'
 import Financeiro from '@/pages/Financeiro'
 import Clientes from '@/pages/Clientes'
@@ -25,6 +26,7 @@ function App() {
             <Route index element={<InitialRedirect />} />
             <Route path="orcamentos" element={<Orcamentos />} />
             <Route path="orcamentos/novo" element={<NovoOrcamento />} />
+            <Route path="orcamentos/modelos" element={<GerenciarModelos />} />
             <Route path="pedidos" element={<Pedidos />} />
             <Route path="financeiro" element={<Financeiro />} />
             <Route path="clientes" element={<Clientes />} />

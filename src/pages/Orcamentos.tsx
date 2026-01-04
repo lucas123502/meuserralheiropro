@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, FileText, Calendar, DollarSign, Eye, Download, CheckCircle } from 'lucide-react'
+import { Plus, FileText, Calendar, DollarSign, Eye, Download, CheckCircle, Settings } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { visualizarPDF, baixarPDF } from '@/lib/pdf-generator'
@@ -125,12 +125,20 @@ export default function Orcamentos() {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Orçamentos</h1>
-          <Link to="/orcamentos/novo">
-            <Button size="lg">
-              <Plus className="h-5 w-5 mr-2" />
-              Novo Orçamento
-            </Button>
-          </Link>
+          <div className="flex gap-3">
+            <Link to="/orcamentos/modelos">
+              <Button variant="outline" size="lg">
+                <Settings className="h-5 w-5 mr-2" />
+                Gerenciar Modelos
+              </Button>
+            </Link>
+            <Link to="/orcamentos/novo">
+              <Button size="lg">
+                <Plus className="h-5 w-5 mr-2" />
+                Novo Orçamento
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <Card className="text-center py-12">
@@ -162,12 +170,20 @@ export default function Orcamentos() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Orçamentos</h1>
-        <Link to="/orcamentos/novo">
-          <Button size="lg">
-            <Plus className="h-5 w-5 mr-2" />
-            Novo Orçamento
-          </Button>
-        </Link>
+        <div className="flex gap-3">
+          <Link to="/orcamentos/modelos">
+            <Button variant="outline" size="lg">
+              <Settings className="h-5 w-5 mr-2" />
+              Gerenciar Modelos
+            </Button>
+          </Link>
+          <Link to="/orcamentos/novo">
+            <Button size="lg">
+              <Plus className="h-5 w-5 mr-2" />
+              Novo Orçamento
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-4">
