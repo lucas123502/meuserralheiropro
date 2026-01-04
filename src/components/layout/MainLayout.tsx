@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { FileText, Package, DollarSign, Users, Lightbulb, BookOpen, BarChart3, HelpCircle } from 'lucide-react'
+import { FileText, Package, DollarSign, Users, Lightbulb, BookOpen, BarChart3, Settings, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navigation = [
@@ -10,6 +10,7 @@ const navigation = [
   { name: 'Ideias & Conteúdo', href: '/ideias', icon: Lightbulb },
   { name: 'Catálogos', href: '/catalogos', icon: BookOpen },
   { name: 'Relatórios', href: '/relatorios', icon: BarChart3 },
+  { name: 'Configurações', href: '/configuracoes', icon: Settings },
   { name: 'Ajuda / Suporte', href: '/ajuda', icon: HelpCircle },
 ]
 

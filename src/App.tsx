@@ -12,6 +12,7 @@ import Ideias from '@/pages/Ideias'
 import Catalogos from '@/pages/Catalogos'
 import Relatorios from '@/pages/Relatorios'
 import HelpSupport from '@/pages/HelpSupport'
+import Configuracoes from '@/pages/Configuracoes'
 import Onboarding from '@/pages/Onboarding'
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
             <Route path="ideias" element={<Ideias />} />
             <Route path="catalogos" element={<Catalogos />} />
             <Route path="relatorios" element={<Relatorios />} />
+            <Route path="configuracoes" element={<Configuracoes />} />
             <Route path="ajuda" element={<HelpSupport />} />
           </Route>
         </Routes>
