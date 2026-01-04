@@ -105,10 +105,14 @@ export default function NovoOrcamento() {
   }
 
   // Recalcular área e valor quando medidas mudarem
-  // CORREÇÃO CRÍTICA: Não alterar valores digitados pelo usuário
+  // CORREÇÃO CRÍTICA: Normalizar vírgula para ponto antes de converter
   useEffect(() => {
-    const larguraNum = parseFloat(largura)
-    const alturaNum = parseFloat(altura)
+    // Normalizar valores: substituir vírgula por ponto
+    const larguraNormalizada = largura.replace(',', '.')
+    const alturaNormalizada = altura.replace(',', '.')
+
+    const larguraNum = parseFloat(larguraNormalizada)
+    const alturaNum = parseFloat(alturaNormalizada)
 
     if (!isNaN(larguraNum) && larguraNum > 0 && !isNaN(alturaNum) && alturaNum > 0) {
       // Converter para metros antes de calcular
@@ -257,9 +261,11 @@ export default function NovoOrcamento() {
         return
       }
 
-      // Converter valores para metros
-      const larguraMetros = converterParaMetros(parseFloat(largura), unidadeLargura)
-      const alturaMetros = converterParaMetros(parseFloat(altura), unidadeAltura)
+      // Normalizar e converter valores para metros
+      const larguraNormalizada = largura.replace(',', '.')
+      const alturaNormalizada = altura.replace(',', '.')
+      const larguraMetros = converterParaMetros(parseFloat(larguraNormalizada), unidadeLargura)
+      const alturaMetros = converterParaMetros(parseFloat(alturaNormalizada), unidadeAltura)
 
       const novoItem: ItemOrcamento = {
         categoria: 'Outros',
@@ -293,9 +299,11 @@ export default function NovoOrcamento() {
       return
     }
 
-    // Converter valores para metros
-    const larguraMetros = converterParaMetros(parseFloat(largura), unidadeLargura)
-    const alturaMetros = converterParaMetros(parseFloat(altura), unidadeAltura)
+    // Normalizar e converter valores para metros
+    const larguraNormalizada = largura.replace(',', '.')
+    const alturaNormalizada = altura.replace(',', '.')
+    const larguraMetros = converterParaMetros(parseFloat(larguraNormalizada), unidadeLargura)
+    const alturaMetros = converterParaMetros(parseFloat(alturaNormalizada), unidadeAltura)
 
     // Adicionar item ao orçamento
     const novoItem: ItemOrcamento = {
