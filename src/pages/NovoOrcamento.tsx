@@ -92,7 +92,6 @@ export default function NovoOrcamento() {
   const [kitPadrao, setKitPadrao] = useState<number>(0)
   const [diarias, setDiarias] = useState<number>(0)
   const [maoDeObra, setMaoDeObra] = useState<number>(0)
-  const [margem, setMargem] = useState<number>(30) // Margem padrão de 30%
 
   // Carregar serviços salvos ao montar o componente
   useEffect(() => {
@@ -294,9 +293,8 @@ export default function NovoOrcamento() {
     const larguraMetros = converterParaMetros(parseFloat(larguraNormalizada), unidadeLargura)
     const alturaMetros = converterParaMetros(parseFloat(alturaNormalizada), unidadeAltura)
 
-    // Calcular valor total com estrutura de custo
-    const custoBase = materiais + kitPadrao + diarias + maoDeObra
-    const valorComMargem = custoBase * (1 + margem / 100)
+    // Calcular valor total (soma direta, sem aplicar margem)
+    const valorTotal = materiais + kitPadrao + diarias + maoDeObra
 
     // Para serviço personalizado por m²
     if (categoriaSelecionada?.id === 'cat-outros' && servicoPersonalizado.tipoCobranca === 'por_m2') {
@@ -308,14 +306,14 @@ export default function NovoOrcamento() {
         altura: alturaMetros,
         area: area,
         valorUnitario: parseFloat(servicoPersonalizado.valorBase),
-        valorTotal: valorComMargem
+        valorTotal: valorTotal
       }
 
       setItens([...itens, novoItem])
 
       toast({
         title: 'Item adicionado!',
-        description: `${novoItem.modelo} - R$ ${valorComMargem.toFixed(2)}`
+        description: `${novoItem.modelo} - R$ ${valorTotal.toFixed(2)}`
       })
 
       setEtapaAtual('cliente')
@@ -331,14 +329,14 @@ export default function NovoOrcamento() {
       altura: alturaMetros,
       area: area,
       valorUnitario: modeloSelecionado!.precoPorMetroQuadrado,
-      valorTotal: valorComMargem
+      valorTotal: valorTotal
     }
 
     setItens([...itens, novoItem])
 
     toast({
       title: 'Item adicionado!',
-      description: `${novoItem.modelo} - R$ ${valorComMargem.toFixed(2)}`
+      description: `${novoItem.modelo} - R$ ${valorTotal.toFixed(2)}`
     })
 
     // Ir para dados do cliente
@@ -1154,30 +1152,26 @@ export default function NovoOrcamento() {
                     </CardContent>
                   </Card>
 
-                  {/* Margem */}
-                  <Card className="border-2 border-gray-200 bg-blue-50">
+                  {/* Indicador de Margem (somente visualização) */}
+                  <Card className="border-2 border-blue-300 bg-blue-50">
                     <CardContent className="p-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="margem" className="text-base font-semibold">
-                          Margem de Lucro (%)
-                        </Label>
-                        <p className="text-sm text-gray-600">
-                          Percentual de lucro sobre os custos totais
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id="margem"
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="100"
-                            placeholder="30"
-                            value={margem || ''}
-                            onChange={(e) => setMargem(parseFloat(e.target.value) || 0)}
-                            className="text-lg font-mono"
-                          />
-                          <span className="text-lg font-semibold">%</span>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-base font-semibold">
+                            Indicador de Eficiência
+                          </Label>
+                          <Badge variant="secondary" className="font-mono text-lg px-3 py-1">
+                            {(() => {
+                              const custosServico = materiais + kitPadrao + diarias
+                              if (custosServico === 0) return '0.0%'
+                              const margemCalculada = (maoDeObra / custosServico) * 100
+                              return `${margemCalculada.toFixed(1)}%`
+                            })()}
+                          </Badge>
                         </div>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          Este percentual mostra quanto a mão de obra representa em relação aos custos do serviço (materiais + kit + diárias). É um indicador para avaliar a eficiência do orçamento.
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -1203,25 +1197,11 @@ export default function NovoOrcamento() {
                           <span className="text-gray-700">Mão de Obra:</span>
                           <span className="font-mono font-semibold">R$ {maoDeObra.toFixed(2)}</span>
                         </div>
-                        <div className="border-t-2 border-gray-300 pt-3 mt-3">
-                          <div className="flex justify-between items-center">
-                            <span className="font-semibold">Subtotal:</span>
-                            <span className="font-mono font-bold text-lg">
-                              R$ {(materiais + kitPadrao + diarias + maoDeObra).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-700">Margem ({margem}%):</span>
-                          <span className="font-mono font-semibold text-green-700">
-                            + R$ {((materiais + kitPadrao + diarias + maoDeObra) * (margem / 100)).toFixed(2)}
-                          </span>
-                        </div>
                         <div className="border-t-2 border-green-400 pt-3 mt-3">
                           <div className="flex justify-between items-center">
-                            <span className="font-bold text-xl">Valor Total:</span>
+                            <span className="font-bold text-xl">Valor Total do Orçamento:</span>
                             <span className="font-mono font-bold text-2xl text-green-700">
-                              R$ {((materiais + kitPadrao + diarias + maoDeObra) * (1 + margem / 100)).toFixed(2)}
+                              R$ {(materiais + kitPadrao + diarias + maoDeObra).toFixed(2)}
                             </span>
                           </div>
                         </div>
