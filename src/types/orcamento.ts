@@ -161,17 +161,113 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
   {
     id: 'cat-portao',
     nome: 'Portão',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-portao-residencial',
+        nome: 'Portão Residencial',
+        modelos: [
+          {
+            id: 'mod-portao-correr',
+            nome: 'Portão de Correr',
+            descricao: 'Portão deslizante lateral, ideal para garagens',
+            precoPorMetroQuadrado: 250.00,
+            ativo: true
+          },
+          {
+            id: 'mod-portao-basculante',
+            nome: 'Portão Basculante',
+            descricao: 'Portão com abertura vertical, economia de espaço',
+            precoPorMetroQuadrado: 300.00,
+            ativo: true
+          },
+          {
+            id: 'mod-portao-pivotante',
+            nome: 'Portão Pivotante',
+            descricao: 'Abertura lateral em pivô central',
+            precoPorMetroQuadrado: 280.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-portao-industrial',
+        nome: 'Portão Industrial',
+        modelos: [
+          {
+            id: 'mod-portao-industrial-grande',
+            nome: 'Portão Industrial Grande',
+            descricao: 'Para galpões e áreas industriais',
+            precoPorMetroQuadrado: 350.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-estrutura-metalica',
     nome: 'Estrutura Metálica',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-cobertura',
+        nome: 'Cobertura Metálica',
+        modelos: [
+          {
+            id: 'mod-cobertura-simples',
+            nome: 'Cobertura Simples',
+            descricao: 'Estrutura básica para cobertura',
+            precoPorMetroQuadrado: 180.00,
+            ativo: true
+          },
+          {
+            id: 'mod-cobertura-duas-aguas',
+            nome: 'Cobertura Duas Águas',
+            descricao: 'Estrutura com caimento bilateral',
+            precoPorMetroQuadrado: 220.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-toldo',
     nome: 'Toldo',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-toldo-fixo',
+        nome: 'Toldo Fixo',
+        modelos: [
+          {
+            id: 'mod-toldo-policarbonato',
+            nome: 'Toldo Policarbonato',
+            descricao: 'Estrutura metálica com cobertura em policarbonato',
+            precoPorMetroQuadrado: 150.00,
+            ativo: true
+          },
+          {
+            id: 'mod-toldo-lona',
+            nome: 'Toldo com Lona',
+            descricao: 'Estrutura metálica com cobertura em lona',
+            precoPorMetroQuadrado: 120.00,
+            ativo: true
+          }
+        ]
+      },
+      {
+        id: 'sub-toldo-retratil',
+        nome: 'Toldo Retrátil',
+        modelos: [
+          {
+            id: 'mod-toldo-retratil-manual',
+            nome: 'Toldo Retrátil Manual',
+            descricao: 'Sistema retrátil com acionamento manual',
+            precoPorMetroQuadrado: 200.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-servico-solda',
@@ -181,7 +277,28 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
   {
     id: 'cat-corrimao',
     nome: 'Corrimão',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-corrimao-escada',
+        nome: 'Corrimão de Escada',
+        modelos: [
+          {
+            id: 'mod-corrimao-inox',
+            nome: 'Corrimão Inox',
+            descricao: 'Corrimão em aço inoxidável',
+            precoPorMetroQuadrado: 280.00,
+            ativo: true
+          },
+          {
+            id: 'mod-corrimao-ferro',
+            nome: 'Corrimão Ferro',
+            descricao: 'Corrimão em ferro com pintura',
+            precoPorMetroQuadrado: 180.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-carretinha',
@@ -201,7 +318,28 @@ export const CATEGORIAS_PADRAO: CategoriaOrcamento[] = [
   {
     id: 'cat-grade-protecao',
     nome: 'Grade de Proteção',
-    subcategorias: []
+    subcategorias: [
+      {
+        id: 'sub-grade-janela',
+        nome: 'Grade para Janela',
+        modelos: [
+          {
+            id: 'mod-grade-simples',
+            nome: 'Grade Simples',
+            descricao: 'Grade de proteção padrão para janelas',
+            precoPorMetroQuadrado: 120.00,
+            ativo: true
+          },
+          {
+            id: 'mod-grade-ornamentada',
+            nome: 'Grade Ornamentada',
+            descricao: 'Grade com detalhes decorativos',
+            precoPorMetroQuadrado: 180.00,
+            ativo: true
+          }
+        ]
+      }
+    ]
   },
   {
     id: 'cat-reformas',

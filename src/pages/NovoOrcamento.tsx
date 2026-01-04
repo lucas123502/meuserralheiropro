@@ -4,669 +4,455 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, ArrowRight, Check, AlertCircle, Plus } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Check, Grid3x3, ChevronRight } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { Cliente } from '@/types/cliente'
-import { salvarClienteAutomatico } from '@/lib/cliente-manager'
-
-type TipoServico = 'Portão' | 'Estrutura metálica' | 'Toldo' | 'Outro'
-type Modelo = 'Portão de correr' | 'Portão basculante' | 'Estrutura simples' | 'Toldo fixo' | 'Toldo retrátil' | 'Outro'
-
-interface Medidas {
-  largura: string
-  altura: string
-  quantidade: string
-}
-
-interface DadosCliente {
-  nome: string
-  telefone: string
-  endereco: string
-}
-
-interface OrcamentoData {
-  tipoServico: TipoServico | ''
-  modelo: Modelo | ''
-  medidas: Medidas
-  valorFinal: number
-  clienteId: string
-  cliente: DadosCliente
-  observacoes: string
-}
+import {
+  CategoriaOrcamento,
+  SubcategoriaOrcamento,
+  ModeloOrcamento,
+  CATEGORIAS_PADRAO,
+  calcularArea,
+  calcularValorModelo
+} from '@/types/orcamento'
 
 export default function NovoOrcamento() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const [etapa, setEtapa] = useState(1)
-  const [clientes, setClientes] = useState<Cliente[]>([])
-  const [clienteSelecionado, setClienteSelecionado] = useState<string>('novo')
 
-  // Estado inicial seguro para novo orçamento
-  const estadoInicial: OrcamentoData = {
-    tipoServico: '',
-    modelo: '',
-    medidas: { largura: '', altura: '', quantidade: '1' },
-    valorFinal: 0,
-    clienteId: '',
-    cliente: { nome: '', telefone: '', endereco: '' },
-    observacoes: ''
-  }
+  // Estados de navegação
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<CategoriaOrcamento | null>(null)
+  const [subcategoriaSelecionada, setSubcategoriaSelecionada] = useState<SubcategoriaOrcamento | null>(null)
+  const [modeloSelecionado, setModeloSelecionado] = useState<ModeloOrcamento | null>(null)
 
-  const [dados, setDados] = useState<OrcamentoData>(estadoInicial)
+  // Estados de medidas
+  const [largura, setLargura] = useState<string>('')
+  const [altura, setAltura] = useState<string>('')
+  const [area, setArea] = useState<number>(0)
+  const [valorTotal, setValorTotal] = useState<number>(0)
 
+  // Carregar dados mockados para demonstração
   useEffect(() => {
-    const saved = localStorage.getItem('clientes')
-    if (saved) {
-      setClientes(JSON.parse(saved))
-    }
-
-    // Verificar se há dados vindos do catálogo
-    const dadosCatalogo = localStorage.getItem('orcamentoCatalogo')
-    if (dadosCatalogo) {
-      try {
-        const { tipoServico, modelo } = JSON.parse(dadosCatalogo)
-        setDados({
-          ...estadoInicial,
-          tipoServico: tipoServico as TipoServico,
-          modelo: modelo as Modelo
-        })
-        // Limpar dados do catálogo após usar
-        localStorage.removeItem('orcamentoCatalogo')
-
-        toast({
-          title: 'Orçamento iniciado',
-          description: 'Continue preenchendo os dados do orçamento'
-        })
-      } catch (error) {
-        console.error('Erro ao carregar dados do catálogo:', error)
-      }
-    }
+    // TODO: Aqui no futuro virá do banco de dados/API
+    // Por enquanto, usar as categorias padrão
   }, [])
 
-  // Helper function para garantir string segura para inputs
-  const toSafeInputValue = (value: string | number): string => {
-    if (typeof value === 'string') {
-      return value
-    }
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return value.toString()
-    }
-    return ''
-  }
+  // Recalcular área e valor quando medidas mudarem
+  useEffect(() => {
+    const larguraNum = parseFloat(largura)
+    const alturaNum = parseFloat(altura)
 
-  const VALOR_POR_M2 = 150
+    if (!isNaN(larguraNum) && larguraNum > 0 && !isNaN(alturaNum) && alturaNum > 0) {
+      const areaCalculada = calcularArea(larguraNum, alturaNum)
+      setArea(areaCalculada)
 
-  const tiposServico: TipoServico[] = ['Portão', 'Estrutura metálica', 'Toldo', 'Outro']
-
-  const modelosPorTipo: Record<TipoServico, Modelo[]> = {
-    'Portão': ['Portão de correr', 'Portão basculante', 'Outro'],
-    'Estrutura metálica': ['Estrutura simples', 'Outro'],
-    'Toldo': ['Toldo fixo', 'Toldo retrátil', 'Outro'],
-    'Outro': ['Outro']
-  }
-
-  const validarMedidas = () => {
-    const largura = parseFloat(dados.medidas.largura)
-    const altura = parseFloat(dados.medidas.altura)
-    const quantidade = parseInt(dados.medidas.quantidade)
-
-    return !isNaN(largura) && largura > 0 &&
-           !isNaN(altura) && altura > 0 &&
-           !isNaN(quantidade) && quantidade > 0
-  }
-
-  const calcularValor = () => {
-    // Garantir que todos os valores são válidos antes de calcular
-    const larguraStr = dados.medidas.largura
-    const alturaStr = dados.medidas.altura
-    const quantidadeStr = dados.medidas.quantidade
-
-    // Se algum campo estiver vazio, retornar 0
-    if (!larguraStr || !alturaStr || !quantidadeStr) {
-      return 0
-    }
-
-    const largura = parseFloat(larguraStr)
-    const altura = parseFloat(alturaStr)
-    const quantidade = parseInt(quantidadeStr)
-
-    // Validar se os números são válidos
-    if (!Number.isFinite(largura) || largura <= 0 ||
-        !Number.isFinite(altura) || altura <= 0 ||
-        !Number.isFinite(quantidade) || quantidade <= 0) {
-      return 0
-    }
-
-    const area = largura * altura * quantidade
-    const valorCalculado = area * VALOR_POR_M2
-
-    // Garantir que o valor calculado é válido
-    return Number.isFinite(valorCalculado) ? valorCalculado : 0
-  }
-
-  const proximaEtapa = () => {
-    if (etapa === 1 && !dados.tipoServico) {
-      toast({
-        title: 'Selecione um tipo de serviço',
-        variant: 'destructive'
-      })
-      return
-    }
-    if (etapa === 2 && !dados.modelo) {
-      toast({
-        title: 'Selecione um modelo',
-        variant: 'destructive'
-      })
-      return
-    }
-    if (etapa === 3) {
-      if (!dados.medidas.largura || !dados.medidas.altura || !dados.medidas.quantidade) {
-        toast({
-          title: 'Preencha todos os campos numéricos antes de avançar',
-          variant: 'destructive'
-        })
-        return
+      if (modeloSelecionado) {
+        const valor = calcularValorModelo(areaCalculada, modeloSelecionado.precoPorMetroQuadrado)
+        setValorTotal(valor)
       }
-      if (!validarMedidas()) {
-        toast({
-          title: 'Preencha todos os campos numéricos antes de avançar',
-          variant: 'destructive'
-        })
-        return
-      }
-      const valor = calcularValor()
-      setDados({ ...dados, valorFinal: valor })
-    }
-    setEtapa(etapa + 1)
-  }
-
-  const voltarEtapa = () => {
-    setEtapa(etapa - 1)
-  }
-
-  const selecionarCliente = (clienteId: string) => {
-    setClienteSelecionado(clienteId)
-
-    if (clienteId === 'novo') {
-      setDados({
-        ...dados,
-        clienteId: '',
-        cliente: { nome: '', telefone: '', endereco: '' }
-      })
     } else {
-      const cliente = clientes.find(c => c.id === clienteId)
-      if (cliente) {
-        setDados({
-          ...dados,
-          clienteId: cliente.id,
-          cliente: {
-            nome: cliente.nome,
-            telefone: cliente.telefone,
-            endereco: cliente.endereco
-          }
-        })
-      }
+      setArea(0)
+      setValorTotal(0)
     }
+  }, [largura, altura, modeloSelecionado])
+
+  const voltarParaCategorias = () => {
+    setCategoriaSelecionada(null)
+    setSubcategoriaSelecionada(null)
+    setModeloSelecionado(null)
+    setLargura('')
+    setAltura('')
   }
 
-  const salvarOrcamento = (status: 'rascunho' | 'enviado') => {
-    if (!dados.cliente.nome) {
+  const voltarParaSubcategorias = () => {
+    setSubcategoriaSelecionada(null)
+    setModeloSelecionado(null)
+    setLargura('')
+    setAltura('')
+  }
+
+  const voltarParaModelos = () => {
+    setModeloSelecionado(null)
+    setLargura('')
+    setAltura('')
+  }
+
+  const adicionarAoOrcamento = () => {
+    if (!categoriaSelecionada || !subcategoriaSelecionada || !modeloSelecionado) {
       toast({
-        title: 'Preencha o nome do cliente',
+        title: 'Erro',
+        description: 'Selecione categoria, subcategoria e modelo',
         variant: 'destructive'
       })
       return
     }
 
-    // Salvar cliente automaticamente e obter o ID (novo ou existente)
-    const clienteId = salvarClienteAutomatico(dados.cliente, dados.clienteId)
-
-    const novoOrcamento = {
-      id: Date.now().toString(),
-      data: new Date().toISOString(),
-      cliente: dados.cliente.nome,
-      clienteId: clienteId, // Usar o ID retornado pela função
-      valor: dados.valorFinal,
-      status,
-      tipoServico: dados.tipoServico,
-      modelo: dados.modelo,
-      medidas: dados.medidas,
-      clienteCompleto: dados.cliente,
-      observacoes: dados.observacoes
+    if (!largura || !altura) {
+      toast({
+        title: 'Erro',
+        description: 'Preencha largura e altura',
+        variant: 'destructive'
+      })
+      return
     }
-
-    const orcamentos = JSON.parse(localStorage.getItem('orcamentos') || '[]')
-    orcamentos.push(novoOrcamento)
-    localStorage.setItem('orcamentos', JSON.stringify(orcamentos))
 
     toast({
-      title: status === 'enviado' ? 'Orçamento enviado!' : 'Orçamento salvo!',
-      description: 'Você pode visualizá-lo na lista de orçamentos'
+      title: 'Item adicionado!',
+      description: `${modeloSelecionado.nome} - R$ ${valorTotal.toFixed(2)}`
     })
 
-    navigate('/orcamentos')
+    // TODO: Implementar lógica para salvar item no orçamento
+    // Por enquanto, apenas resetar seleção
+    voltarParaCategorias()
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-8">
-        <Button variant="ghost" onClick={() => navigate('/orcamentos')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar para Orçamentos
-        </Button>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto p-6 max-w-7xl">
+        {/* Header */}
+        <div className="mb-6">
+          <Button variant="ghost" onClick={() => navigate('/orcamentos')} className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar para Orçamentos
+          </Button>
+          <h1 className="text-3xl font-bold">Novo Orçamento</h1>
+          <p className="text-gray-600 mt-1">Selecione os produtos e serviços para criar seu orçamento</p>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Novo Orçamento</CardTitle>
-          <CardDescription>
-            Etapa {etapa} de 4
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Indicador de progresso */}
-          <div className="flex items-center gap-2">
-            {[1, 2, 3, 4].map((num) => (
-              <div
-                key={num}
-                className={`h-2 flex-1 rounded-full ${
-                  num <= etapa ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Etapa 1: Tipo de Serviço */}
-          {etapa === 1 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Selecione o tipo de serviço</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {tiposServico.map((tipo) => (
-                  <button
-                    key={tipo}
-                    onClick={() => setDados({ ...dados, tipoServico: tipo, modelo: '' })}
-                    className={`p-6 border-2 rounded-lg text-left transition-all ${
-                      dados.tipoServico === tipo
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="font-semibold text-lg">{tipo}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Etapa 2: Modelo */}
-          {etapa === 2 && dados.tipoServico && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Selecione o modelo</h2>
-              <div className="grid grid-cols-1 gap-4">
-                {modelosPorTipo[dados.tipoServico].map((modelo) => (
-                  <button
-                    key={modelo}
-                    onClick={() => setDados({ ...dados, modelo })}
-                    className={`p-6 border-2 rounded-lg text-left transition-all ${
-                      dados.modelo === modelo
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="font-semibold text-lg">{modelo}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Etapa 3: Medidas */}
-          {etapa === 3 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Informe as medidas</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="largura">Largura (metros)</Label>
-                  <Input
-                    id="largura"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 3.5"
-                    value={toSafeInputValue(dados.medidas.largura)}
-                    onChange={(e) => {
-                      const valor = e.target.value
-                      setDados({
-                        ...dados,
-                        medidas: { ...dados.medidas, largura: valor }
-                      })
-                    }}
-                    onBlur={(e) => {
-                      // Ao sair do campo, limpar se inválido
-                      const valor = e.target.value
-                      const numero = parseFloat(valor)
-                      if (valor === '' || !Number.isFinite(numero) || numero < 0) {
-                        setDados({
-                          ...dados,
-                          medidas: { ...dados.medidas, largura: '' }
-                        })
-                      }
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="altura">Altura (metros)</Label>
-                  <Input
-                    id="altura"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Ex: 2.0"
-                    value={toSafeInputValue(dados.medidas.altura)}
-                    onChange={(e) => {
-                      const valor = e.target.value
-                      setDados({
-                        ...dados,
-                        medidas: { ...dados.medidas, altura: valor }
-                      })
-                    }}
-                    onBlur={(e) => {
-                      // Ao sair do campo, limpar se inválido
-                      const valor = e.target.value
-                      const numero = parseFloat(valor)
-                      if (valor === '' || !Number.isFinite(numero) || numero < 0) {
-                        setDados({
-                          ...dados,
-                          medidas: { ...dados.medidas, altura: '' }
-                        })
-                      }
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="quantidade">Quantidade</Label>
-                  <Input
-                    id="quantidade"
-                    type="number"
-                    min="1"
-                    placeholder="Ex: 1"
-                    value={toSafeInputValue(dados.medidas.quantidade)}
-                    onChange={(e) => {
-                      const valor = e.target.value
-                      setDados({
-                        ...dados,
-                        medidas: { ...dados.medidas, quantidade: valor }
-                      })
-                    }}
-                    onBlur={(e) => {
-                      // Ao sair do campo, definir 1 se inválido
-                      const valor = e.target.value
-                      const numero = parseInt(valor)
-                      if (valor === '' || !Number.isFinite(numero) || numero < 1) {
-                        setDados({
-                          ...dados,
-                          medidas: { ...dados.medidas, quantidade: '1' }
-                        })
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              {validarMedidas() && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Área total: {(() => {
-                      const largura = parseFloat(dados.medidas.largura)
-                      const altura = parseFloat(dados.medidas.altura)
-                      const quantidade = parseInt(dados.medidas.quantidade)
-
-                      // Validar todos os números
-                      if (Number.isFinite(largura) && Number.isFinite(altura) && Number.isFinite(quantidade)) {
-                        const area = largura * altura * quantidade
-                        if (Number.isFinite(area) && area > 0) {
-                          return area.toFixed(2)
-                        }
-                      }
-                      return '0.00'
-                    })()} m²
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
-
-          {/* Etapa 4: Revisão e Cliente */}
-          {etapa === 4 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Revisão do Orçamento</h2>
-
-                <Alert className="mb-6 bg-yellow-50 border-yellow-200">
-                  <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <AlertDescription className="text-yellow-800">
-                    Este valor é uma estimativa inicial. Revise antes de enviar ao cliente.
-                  </AlertDescription>
-                </Alert>
-
-                <div className="bg-gray-50 rounded-lg p-6 space-y-4 mb-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-sm text-gray-600">Tipo de Serviço</div>
-                      <div className="font-semibold">{dados.tipoServico}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600">Modelo</div>
-                      <div className="font-semibold">{dados.modelo}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600">Medidas</div>
-                      <div className="font-semibold">
-                        {(() => {
-                          const larguraStr = dados.medidas.largura
-                          const alturaStr = dados.medidas.altura
-                          const quantidadeStr = dados.medidas.quantidade
-
-                          if (!larguraStr || !alturaStr || !quantidadeStr) {
-                            return 'Não informado'
-                          }
-
-                          const largura = parseFloat(larguraStr)
-                          const altura = parseFloat(alturaStr)
-
-                          if (Number.isFinite(largura) && Number.isFinite(altura)) {
-                            return `${largura.toFixed(2)}m × ${altura.toFixed(2)}m × ${quantidadeStr}`
-                          }
-                          return 'Não informado'
-                        })()}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600">Área Total</div>
-                      <div className="font-semibold">
-                        {(() => {
-                          if (!validarMedidas()) {
-                            return '0.00 m²'
-                          }
-
-                          const largura = parseFloat(dados.medidas.largura)
-                          const altura = parseFloat(dados.medidas.altura)
-                          const quantidade = parseInt(dados.medidas.quantidade)
-
-                          if (Number.isFinite(largura) && Number.isFinite(altura) && Number.isFinite(quantidade)) {
-                            const area = largura * altura * quantidade
-                            if (Number.isFinite(area) && area > 0) {
-                              return `${area.toFixed(2)} m²`
-                            }
-                          }
-                          return '0.00 m²'
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mb-6">
-                  <Label htmlFor="valorFinal">Valor Final (R$)</Label>
-                  <Input
-                    id="valorFinal"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={(() => {
-                      // SEMPRE retornar string para o input
-                      if (Number.isFinite(dados.valorFinal)) {
-                        return dados.valorFinal.toString()
-                      }
-                      return ''
-                    })()}
-                    onChange={(e) => {
-                      const valor = e.target.value
-                      const numero = parseFloat(valor)
-
-                      // Se campo vazio, deixar como string vazia temporariamente
-                      if (valor === '') {
-                        setDados({ ...dados, valorFinal: 0 })
-                        return
-                      }
-
-                      // Só atualizar se for número válido
-                      if (Number.isFinite(numero) && numero >= 0) {
-                        setDados({ ...dados, valorFinal: numero })
-                      }
-                    }}
-                    onBlur={(e) => {
-                      // Ao sair do campo, garantir valor válido
-                      const valor = e.target.value
-                      const numero = parseFloat(valor)
-
-                      if (valor === '' || !Number.isFinite(numero) || numero < 0) {
-                        // Se inválido, usar valor calculado automaticamente
-                        const valorCalculado = calcularValor()
-                        setDados({ ...dados, valorFinal: valorCalculado })
-                      }
-                    }}
-                    className="text-2xl font-bold"
-                  />
-                  <p className="text-sm text-gray-600">
-                    Valor calculado automaticamente: R$ {(() => {
-                      const valorCalc = calcularValor()
-                      return Number.isFinite(valorCalc) && valorCalc >= 0 ? valorCalc.toFixed(2) : '0.00'
-                    })()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Dados do Cliente</h3>
-                <div className="space-y-4">
-                  {clientes.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Selecionar Cliente</Label>
-                      <Select value={clienteSelecionado} onValueChange={selecionarCliente}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Escolha um cliente" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="novo">
-                            <div className="flex items-center gap-2">
-                              <Plus className="h-4 w-4" />
-                              Cadastrar novo cliente
-                            </div>
-                          </SelectItem>
-                          {clientes.map(cliente => (
-                            <SelectItem key={cliente.id} value={cliente.id}>
-                              {cliente.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Área principal - Seleção */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {!categoriaSelecionada && 'Selecione uma Categoria'}
+                  {categoriaSelecionada && !subcategoriaSelecionada && 'Selecione uma Subcategoria'}
+                  {subcategoriaSelecionada && !modeloSelecionado && 'Selecione um Modelo'}
+                  {modeloSelecionado && 'Informe as Medidas'}
+                </CardTitle>
+                <CardDescription>
+                  {categoriaSelecionada && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        onClick={voltarParaCategorias}
+                        className="text-sm hover:underline"
+                      >
+                        {categoriaSelecionada.nome}
+                      </button>
+                      {subcategoriaSelecionada && (
+                        <>
+                          <ChevronRight className="h-4 w-4" />
+                          <button
+                            onClick={voltarParaSubcategorias}
+                            className="text-sm hover:underline"
+                          >
+                            {subcategoriaSelecionada.nome}
+                          </button>
+                        </>
+                      )}
+                      {modeloSelecionado && (
+                        <>
+                          <ChevronRight className="h-4 w-4" />
+                          <button
+                            onClick={voltarParaModelos}
+                            className="text-sm hover:underline"
+                          >
+                            {modeloSelecionado.nome}
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
-                  <div className="space-y-2">
-                    <Label htmlFor="nomeCliente">Nome do Cliente *</Label>
-                    <Input
-                      id="nomeCliente"
-                      placeholder="Nome completo"
-                      value={dados.cliente.nome}
-                      onChange={(e) => setDados({
-                        ...dados,
-                        cliente: { ...dados.cliente, nome: e.target.value }
-                      })}
-                      disabled={clienteSelecionado !== 'novo'}
-                    />
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* ETAPA 1: Categorias */}
+                {!categoriaSelecionada && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {CATEGORIAS_PADRAO.map((categoria) => (
+                      <button
+                        key={categoria.id}
+                        onClick={() => setCategoriaSelecionada(categoria)}
+                        className="group p-6 border-2 border-gray-200 rounded-lg hover:border-black transition-all text-left bg-white hover:shadow-md"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-semibold text-lg group-hover:text-black">
+                              {categoria.nome}
+                            </h3>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {categoria.subcategorias.length} subcategorias
+                            </p>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-black" />
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="telefone">Telefone</Label>
-                    <Input
-                      id="telefone"
-                      placeholder="(00) 00000-0000"
-                      value={dados.cliente.telefone}
-                      onChange={(e) => setDados({
-                        ...dados,
-                        cliente: { ...dados.cliente, telefone: e.target.value }
-                      })}
-                      disabled={clienteSelecionado !== 'novo'}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endereco">Endereço</Label>
-                    <Input
-                      id="endereco"
-                      placeholder="Rua, número, bairro"
-                      value={dados.cliente.endereco}
-                      onChange={(e) => setDados({
-                        ...dados,
-                        cliente: { ...dados.cliente, endereco: e.target.value }
-                      })}
-                      disabled={clienteSelecionado !== 'novo'}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="observacoes">Observações</Label>
-                    <Textarea
-                      id="observacoes"
-                      placeholder="Detalhes adicionais, informações importantes..."
-                      rows={3}
-                      value={dados.observacoes}
-                      onChange={(e) => setDados({ ...dados, observacoes: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+                )}
 
-          {/* Botões de navegação */}
-          <div className="flex items-center justify-between pt-6 border-t">
-            {etapa > 1 && (
-              <Button variant="outline" onClick={voltarEtapa}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-            )}
-            {etapa < 4 ? (
-              <Button onClick={proximaEtapa} className="ml-auto">
-                Próximo
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            ) : (
-              <div className="flex gap-2 ml-auto">
-                <Button variant="outline" onClick={() => salvarOrcamento('rascunho')}>
-                  Salvar Rascunho
-                </Button>
-                <Button onClick={() => salvarOrcamento('enviado')}>
-                  <Check className="h-4 w-4 mr-2" />
-                  Finalizar Orçamento
-                </Button>
-              </div>
-            )}
+                {/* ETAPA 2: Subcategorias */}
+                {categoriaSelecionada && !subcategoriaSelecionada && (
+                  <div>
+                    {categoriaSelecionada.subcategorias.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Grid3x3 className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-500">
+                          Nenhuma subcategoria cadastrada em <strong>{categoriaSelecionada.nome}</strong>
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={voltarParaCategorias}
+                          className="mt-4"
+                        >
+                          Voltar para Categorias
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3">
+                        {categoriaSelecionada.subcategorias.map((subcategoria) => (
+                          <button
+                            key={subcategoria.id}
+                            onClick={() => setSubcategoriaSelecionada(subcategoria)}
+                            className="group p-4 border-2 border-gray-200 rounded-lg hover:border-black transition-all text-left bg-white hover:shadow-md"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-medium group-hover:text-black">
+                                  {subcategoria.nome}
+                                </h4>
+                                <p className="text-sm text-gray-500 mt-1">
+                                  {subcategoria.modelos.length} modelos disponíveis
+                                </p>
+                              </div>
+                              <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-black" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ETAPA 3: Modelos */}
+                {subcategoriaSelecionada && !modeloSelecionado && (
+                  <div>
+                    {subcategoriaSelecionada.modelos.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Grid3x3 className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-500">
+                          Nenhum modelo cadastrado em <strong>{subcategoriaSelecionada.nome}</strong>
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={voltarParaSubcategorias}
+                          className="mt-4"
+                        >
+                          Voltar para Subcategorias
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {subcategoriaSelecionada.modelos
+                          .filter(modelo => modelo.ativo)
+                          .map((modelo) => (
+                            <button
+                              key={modelo.id}
+                              onClick={() => setModeloSelecionado(modelo)}
+                              className="group border-2 border-gray-200 rounded-lg hover:border-black transition-all text-left bg-white hover:shadow-md overflow-hidden"
+                            >
+                              {/* Imagem do modelo */}
+                              {modelo.imagemUrl ? (
+                                <div className="aspect-video bg-gray-100 relative">
+                                  <img
+                                    src={modelo.imagemUrl}
+                                    alt={modelo.nome}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                                  <Grid3x3 className="h-12 w-12 text-gray-300" />
+                                </div>
+                              )}
+
+                              {/* Info do modelo */}
+                              <div className="p-4">
+                                <h4 className="font-semibold text-lg group-hover:text-black mb-1">
+                                  {modelo.nome}
+                                </h4>
+                                {modelo.descricao && (
+                                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                                    {modelo.descricao}
+                                  </p>
+                                )}
+                                <div className="flex items-center justify-between">
+                                  <Badge variant="secondary" className="font-mono">
+                                    R$ {modelo.precoPorMetroQuadrado.toFixed(2)}/m²
+                                  </Badge>
+                                  <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-black" />
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ETAPA 4: Medidas */}
+                {modeloSelecionado && (
+                  <div className="space-y-6">
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-semibold text-lg">{modeloSelecionado.nome}</h4>
+                          {modeloSelecionado.descricao && (
+                            <p className="text-sm text-gray-600 mt-1">{modeloSelecionado.descricao}</p>
+                          )}
+                        </div>
+                        <Badge variant="secondary" className="font-mono">
+                          R$ {modeloSelecionado.precoPorMetroQuadrado.toFixed(2)}/m²
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="largura">Largura (metros)</Label>
+                        <Input
+                          id="largura"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Ex: 3.50"
+                          value={largura}
+                          onChange={(e) => setLargura(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="altura">Altura (metros)</Label>
+                        <Input
+                          id="altura"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Ex: 2.00"
+                          value={altura}
+                          onChange={(e) => setAltura(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    {area > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                          <div>
+                            <p className="text-sm text-gray-600">Área Calculada</p>
+                            <p className="text-2xl font-bold text-black">
+                              {area.toFixed(2)} m²
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Valor Total</p>
+                            <p className="text-2xl font-bold text-black">
+                              R$ {valorTotal.toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={adicionarAoOrcamento}
+                      className="w-full"
+                      disabled={!largura || !altura || area === 0}
+                    >
+                      <Check className="h-4 w-4 mr-2" />
+                      Adicionar ao Orçamento
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Sidebar - Resumo */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-6">
+              <CardHeader>
+                <CardTitle>Resumo</CardTitle>
+                <CardDescription>Itens selecionados</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!categoriaSelecionada ? (
+                  <div className="text-center py-8">
+                    <Grid3x3 className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                    <p className="text-sm text-gray-500">
+                      Nenhum item selecionado ainda
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-xs text-gray-500">Categoria</Label>
+                      <p className="font-medium">{categoriaSelecionada.nome}</p>
+                    </div>
+
+                    {subcategoriaSelecionada && (
+                      <div>
+                        <Label className="text-xs text-gray-500">Subcategoria</Label>
+                        <p className="font-medium">{subcategoriaSelecionada.nome}</p>
+                      </div>
+                    )}
+
+                    {modeloSelecionado && (
+                      <>
+                        <div>
+                          <Label className="text-xs text-gray-500">Modelo</Label>
+                          <p className="font-medium">{modeloSelecionado.nome}</p>
+                        </div>
+
+                        <div className="border-t pt-4">
+                          <Label className="text-xs text-gray-500">Preço por m²</Label>
+                          <p className="font-mono font-semibold">
+                            R$ {modeloSelecionado.precoPorMetroQuadrado.toFixed(2)}
+                          </p>
+                        </div>
+                      </>
+                    )}
+
+                    {area > 0 && (
+                      <>
+                        <div className="border-t pt-4">
+                          <Label className="text-xs text-gray-500">Medidas</Label>
+                          <p className="font-medium">
+                            {largura}m × {altura}m
+                          </p>
+                        </div>
+
+                        <div>
+                          <Label className="text-xs text-gray-500">Área Total</Label>
+                          <p className="font-semibold text-lg">
+                            {area.toFixed(2)} m²
+                          </p>
+                        </div>
+
+                        <div className="border-t pt-4">
+                          <Label className="text-xs text-gray-500">Valor Calculado</Label>
+                          <p className="font-bold text-2xl text-black">
+                            R$ {valorTotal.toFixed(2)}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
