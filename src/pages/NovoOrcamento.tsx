@@ -44,7 +44,7 @@ interface ItemOrcamento {
   valorTotal: number
 }
 
-type Etapa = 'categoria' | 'subcategoria' | 'modelo' | 'medidas' | 'cliente' | 'finalizar' | 'servico-personalizado'
+type Etapa = 'categoria' | 'subcategoria' | 'modelo' | 'medidas' | 'estrutura-custo' | 'cliente' | 'finalizar' | 'servico-personalizado'
 
 export default function NovoOrcamento() {
   const navigate = useNavigate()
@@ -86,6 +86,13 @@ export default function NovoOrcamento() {
   // Estados de finalização
   const [itens, setItens] = useState<ItemOrcamento[]>([])
   const [observacoes, setObservacoes] = useState('')
+
+  // Estados de estrutura de custo
+  const [materiais, setMateriais] = useState<number>(0)
+  const [kitPadrao, setKitPadrao] = useState<number>(0)
+  const [diarias, setDiarias] = useState<number>(0)
+  const [maoDeObra, setMaoDeObra] = useState<number>(0)
+  const [margem, setMargem] = useState<number>(30) // Margem padrão de 30%
 
   // Carregar serviços salvos ao montar o componente
   useEffect(() => {
@@ -261,31 +268,8 @@ export default function NovoOrcamento() {
         return
       }
 
-      // Normalizar e converter valores para metros
-      const larguraNormalizada = largura.replace(',', '.')
-      const alturaNormalizada = altura.replace(',', '.')
-      const larguraMetros = converterParaMetros(parseFloat(larguraNormalizada), unidadeLargura)
-      const alturaMetros = converterParaMetros(parseFloat(alturaNormalizada), unidadeAltura)
-
-      const novoItem: ItemOrcamento = {
-        categoria: 'Outros',
-        subcategoria: servicoPersonalizado.nomeSubcategoria || 'Serviço Personalizado',
-        modelo: servicoPersonalizado.nomeServico,
-        largura: larguraMetros,
-        altura: alturaMetros,
-        area: area,
-        valorUnitario: parseFloat(servicoPersonalizado.valorBase),
-        valorTotal: valorTotal
-      }
-
-      setItens([...itens, novoItem])
-
-      toast({
-        title: 'Item adicionado!',
-        description: `${novoItem.modelo} - R$ ${valorTotal.toFixed(2)}`
-      })
-
-      setEtapaAtual('cliente')
+      // Ir para estrutura de custo
+      setEtapaAtual('estrutura-custo')
       return
     }
 
@@ -299,13 +283,46 @@ export default function NovoOrcamento() {
       return
     }
 
+    // Ir para estrutura de custo
+    setEtapaAtual('estrutura-custo')
+  }
+
+  const confirmarEstruturaCusto = () => {
     // Normalizar e converter valores para metros
     const larguraNormalizada = largura.replace(',', '.')
     const alturaNormalizada = altura.replace(',', '.')
     const larguraMetros = converterParaMetros(parseFloat(larguraNormalizada), unidadeLargura)
     const alturaMetros = converterParaMetros(parseFloat(alturaNormalizada), unidadeAltura)
 
-    // Adicionar item ao orçamento
+    // Calcular valor total com estrutura de custo
+    const custoBase = materiais + kitPadrao + diarias + maoDeObra
+    const valorComMargem = custoBase * (1 + margem / 100)
+
+    // Para serviço personalizado por m²
+    if (categoriaSelecionada?.id === 'cat-outros' && servicoPersonalizado.tipoCobranca === 'por_m2') {
+      const novoItem: ItemOrcamento = {
+        categoria: 'Outros',
+        subcategoria: servicoPersonalizado.nomeSubcategoria || 'Serviço Personalizado',
+        modelo: servicoPersonalizado.nomeServico,
+        largura: larguraMetros,
+        altura: alturaMetros,
+        area: area,
+        valorUnitario: parseFloat(servicoPersonalizado.valorBase),
+        valorTotal: valorComMargem
+      }
+
+      setItens([...itens, novoItem])
+
+      toast({
+        title: 'Item adicionado!',
+        description: `${novoItem.modelo} - R$ ${valorComMargem.toFixed(2)}`
+      })
+
+      setEtapaAtual('cliente')
+      return
+    }
+
+    // Fluxo padrão para outros serviços
     const novoItem: ItemOrcamento = {
       categoria: categoriaSelecionada!.nome,
       subcategoria: subcategoriaSelecionada!.nome,
@@ -314,14 +331,14 @@ export default function NovoOrcamento() {
       altura: alturaMetros,
       area: area,
       valorUnitario: modeloSelecionado!.precoPorMetroQuadrado,
-      valorTotal: valorTotal
+      valorTotal: valorComMargem
     }
 
     setItens([...itens, novoItem])
 
     toast({
       title: 'Item adicionado!',
-      description: `${novoItem.modelo} - R$ ${valorTotal.toFixed(2)}`
+      description: `${novoItem.modelo} - R$ ${valorComMargem.toFixed(2)}`
     })
 
     // Ir para dados do cliente
@@ -370,12 +387,14 @@ export default function NovoOrcamento() {
         setAltura('')
         setEtapaAtual('modelo')
       }
+    } else if (etapaAtual === 'estrutura-custo') {
+      setEtapaAtual('medidas')
     } else if (etapaAtual === 'cliente') {
       if (itens.length > 0) {
         // Se já tem itens, voltar para finalizar
         setEtapaAtual('finalizar')
       } else {
-        setEtapaAtual('medidas')
+        setEtapaAtual('estrutura-custo')
       }
     } else if (etapaAtual === 'finalizar') {
       setEtapaAtual('cliente')
@@ -472,6 +491,7 @@ export default function NovoOrcamento() {
             {etapaAtual === 'modelo' && 'Selecione o modelo'}
             {etapaAtual === 'servico-personalizado' && 'Configure seu serviço personalizado'}
             {etapaAtual === 'medidas' && 'Informe as medidas'}
+            {etapaAtual === 'estrutura-custo' && 'Defina a estrutura de custos'}
             {etapaAtual === 'cliente' && 'Dados do cliente'}
             {etapaAtual === 'finalizar' && 'Revisar e finalizar orçamento'}
           </p>
@@ -487,8 +507,9 @@ export default function NovoOrcamento() {
                 {etapaAtual === 'modelo' && '3. Modelo'}
                 {etapaAtual === 'servico-personalizado' && '2. Serviço Personalizado'}
                 {etapaAtual === 'medidas' && '4. Medidas'}
-                {etapaAtual === 'cliente' && '5. Cliente'}
-                {etapaAtual === 'finalizar' && '6. Finalizar'}
+                {etapaAtual === 'estrutura-custo' && '5. Estrutura de Custo'}
+                {etapaAtual === 'cliente' && '6. Cliente'}
+                {etapaAtual === 'finalizar' && '7. Finalizar'}
               </CardTitle>
               {etapaAtual !== 'categoria' && (
                 <Button variant="outline" size="sm" onClick={voltarEtapa}>
@@ -998,7 +1019,225 @@ export default function NovoOrcamento() {
               </div>
             )}
 
-            {/* ETAPA 5: Cliente */}
+            {/* ETAPA 5: Estrutura de Custo */}
+            {etapaAtual === 'estrutura-custo' && (
+              <div className="space-y-6">
+                {/* Resumo do item */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-semibold text-lg">
+                        {categoriaSelecionada?.id === 'cat-outros'
+                          ? servicoPersonalizado.nomeServico
+                          : modeloSelecionado?.nome}
+                      </h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {largura} {unidadeLargura} × {altura} {unidadeAltura} = {area.toFixed(2)} m²
+                      </p>
+                    </div>
+                    {modeloSelecionado && (
+                      <Badge variant="secondary" className="font-mono">
+                        R$ {modeloSelecionado.precoPorMetroQuadrado.toFixed(2)}/m²
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-lg">Componentes de Custo</h4>
+
+                  {/* Materiais */}
+                  <Card className="border-2 border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="materiais" className="text-base font-semibold">
+                          Materiais
+                        </Label>
+                        <p className="text-sm text-gray-600">
+                          Custo dos materiais necessários para o serviço
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold">R$</span>
+                          <Input
+                            id="materiais"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={materiais || ''}
+                            onChange={(e) => setMateriais(parseFloat(e.target.value) || 0)}
+                            className="text-lg font-mono"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Kit Padrão */}
+                  <Card className="border-2 border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="kitPadrao" className="text-base font-semibold">
+                          Kit Padrão
+                        </Label>
+                        <p className="text-sm text-gray-600">
+                          Conjunto de itens básicos incluídos no serviço
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold">R$</span>
+                          <Input
+                            id="kitPadrao"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={kitPadrao || ''}
+                            onChange={(e) => setKitPadrao(parseFloat(e.target.value) || 0)}
+                            className="text-lg font-mono"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Diárias */}
+                  <Card className="border-2 border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="diarias" className="text-base font-semibold">
+                          Diárias
+                        </Label>
+                        <p className="text-sm text-gray-600">
+                          Custo por dia de trabalho no projeto
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold">R$</span>
+                          <Input
+                            id="diarias"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={diarias || ''}
+                            onChange={(e) => setDiarias(parseFloat(e.target.value) || 0)}
+                            className="text-lg font-mono"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Mão de Obra */}
+                  <Card className="border-2 border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="maoDeObra" className="text-base font-semibold">
+                          Mão de Obra
+                        </Label>
+                        <p className="text-sm text-gray-600">
+                          Custo da mão de obra especializada
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold">R$</span>
+                          <Input
+                            id="maoDeObra"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={maoDeObra || ''}
+                            onChange={(e) => setMaoDeObra(parseFloat(e.target.value) || 0)}
+                            className="text-lg font-mono"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Margem */}
+                  <Card className="border-2 border-gray-200 bg-blue-50">
+                    <CardContent className="p-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="margem" className="text-base font-semibold">
+                          Margem de Lucro (%)
+                        </Label>
+                        <p className="text-sm text-gray-600">
+                          Percentual de lucro sobre os custos totais
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="margem"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            placeholder="30"
+                            value={margem || ''}
+                            onChange={(e) => setMargem(parseFloat(e.target.value) || 0)}
+                            className="text-lg font-mono"
+                          />
+                          <span className="text-lg font-semibold">%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Resumo de Custos */}
+                  <Card className="border-2 border-green-300 bg-green-50">
+                    <CardContent className="p-6">
+                      <h4 className="font-semibold text-lg mb-4">Resumo de Custos</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-700">Materiais:</span>
+                          <span className="font-mono font-semibold">R$ {materiais.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-700">Kit Padrão:</span>
+                          <span className="font-mono font-semibold">R$ {kitPadrao.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-700">Diárias:</span>
+                          <span className="font-mono font-semibold">R$ {diarias.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-700">Mão de Obra:</span>
+                          <span className="font-mono font-semibold">R$ {maoDeObra.toFixed(2)}</span>
+                        </div>
+                        <div className="border-t-2 border-gray-300 pt-3 mt-3">
+                          <div className="flex justify-between items-center">
+                            <span className="font-semibold">Subtotal:</span>
+                            <span className="font-mono font-bold text-lg">
+                              R$ {(materiais + kitPadrao + diarias + maoDeObra).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-700">Margem ({margem}%):</span>
+                          <span className="font-mono font-semibold text-green-700">
+                            + R$ {((materiais + kitPadrao + diarias + maoDeObra) * (margem / 100)).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="border-t-2 border-green-400 pt-3 mt-3">
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-xl">Valor Total:</span>
+                            <span className="font-mono font-bold text-2xl text-green-700">
+                              R$ {((materiais + kitPadrao + diarias + maoDeObra) * (1 + margem / 100)).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Button onClick={confirmarEstruturaCusto} className="w-full" size="lg">
+                  <Check className="h-5 w-5 mr-2" />
+                  Confirmar Estrutura de Custo
+                </Button>
+              </div>
+            )}
+
+            {/* ETAPA 6: Cliente */}
             {etapaAtual === 'cliente' && (
               <div className="space-y-6">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
