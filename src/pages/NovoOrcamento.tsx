@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowLeft, Check, Grid3x3, ChevronRight, User, FileCheck, Trash2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -69,6 +70,8 @@ export default function NovoOrcamento() {
   // Estados de medidas - PRESERVAR VALORES EXATOS
   const [largura, setLargura] = useState<string>('')
   const [altura, setAltura] = useState<string>('')
+  const [unidadeLargura, setUnidadeLargura] = useState<'m' | 'cm' | 'mm'>('m')
+  const [unidadeAltura, setUnidadeAltura] = useState<'m' | 'cm' | 'mm'>('m')
   const [area, setArea] = useState<number>(0)
   const [valorTotal, setValorTotal] = useState<number>(0)
 
@@ -88,6 +91,18 @@ export default function NovoOrcamento() {
     setServicosSalvos(obterServicosPersonalizados())
   }, [])
 
+  // Função para converter unidades para metros
+  const converterParaMetros = (valor: number, unidade: 'm' | 'cm' | 'mm'): number => {
+    switch (unidade) {
+      case 'cm':
+        return valor / 100
+      case 'mm':
+        return valor / 1000
+      default:
+        return valor
+    }
+  }
+
   // Recalcular área e valor quando medidas mudarem
   // CORREÇÃO CRÍTICA: Não alterar valores digitados pelo usuário
   useEffect(() => {
@@ -95,7 +110,10 @@ export default function NovoOrcamento() {
     const alturaNum = parseFloat(altura)
 
     if (!isNaN(larguraNum) && larguraNum > 0 && !isNaN(alturaNum) && alturaNum > 0) {
-      const areaCalculada = calcularArea(larguraNum, alturaNum)
+      // Converter para metros antes de calcular
+      const larguraMetros = converterParaMetros(larguraNum, unidadeLargura)
+      const alturaMetros = converterParaMetros(alturaNum, unidadeAltura)
+      const areaCalculada = calcularArea(larguraMetros, alturaMetros)
       setArea(areaCalculada)
 
       if (modeloSelecionado) {
@@ -123,7 +141,7 @@ export default function NovoOrcamento() {
         setValorTotal(0)
       }
     }
-  }, [largura, altura, modeloSelecionado, servicoPersonalizado.tipoCobranca, servicoPersonalizado.valorBase, etapaAtual])
+  }, [largura, altura, unidadeLargura, unidadeAltura, modeloSelecionado, servicoPersonalizado.tipoCobranca, servicoPersonalizado.valorBase, etapaAtual])
 
   const selecionarCategoria = (categoria: CategoriaOrcamento) => {
     setCategoriaSelecionada(categoria)
@@ -231,12 +249,16 @@ export default function NovoOrcamento() {
         return
       }
 
+      // Converter valores para metros
+      const larguraMetros = converterParaMetros(parseFloat(largura), unidadeLargura)
+      const alturaMetros = converterParaMetros(parseFloat(altura), unidadeAltura)
+
       const novoItem: ItemOrcamento = {
         categoria: 'Outros',
         subcategoria: servicoPersonalizado.nomeSubcategoria || 'Serviço Personalizado',
         modelo: servicoPersonalizado.nomeServico,
-        largura: parseFloat(largura),
-        altura: parseFloat(altura),
+        largura: larguraMetros,
+        altura: alturaMetros,
         area: area,
         valorUnitario: parseFloat(servicoPersonalizado.valorBase),
         valorTotal: valorTotal
@@ -263,13 +285,17 @@ export default function NovoOrcamento() {
       return
     }
 
+    // Converter valores para metros
+    const larguraMetros = converterParaMetros(parseFloat(largura), unidadeLargura)
+    const alturaMetros = converterParaMetros(parseFloat(altura), unidadeAltura)
+
     // Adicionar item ao orçamento
     const novoItem: ItemOrcamento = {
       categoria: categoriaSelecionada!.nome,
       subcategoria: subcategoriaSelecionada!.nome,
       modelo: modeloSelecionado!.nome,
-      largura: parseFloat(largura),
-      altura: parseFloat(altura),
+      largura: larguraMetros,
+      altura: alturaMetros,
       area: area,
       valorUnitario: modeloSelecionado!.precoPorMetroQuadrado,
       valorTotal: valorTotal
@@ -760,7 +786,95 @@ export default function NovoOrcamento() {
               </div>
             )}
 
-            {/* ETAPA 4: Medidas */}
+            {/* ETAPA 4: Medidas - Serviço Personalizado (Categoria Outros) */}
+            {etapaAtual === 'medidas' && categoriaSelecionada?.id === 'cat-outros' && servicoPersonalizado.tipoCobranca === 'por_m2' && (
+              <div className="space-y-6">
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-semibold text-lg">{servicoPersonalizado.nomeServico}</h4>
+                      {servicoPersonalizado.nomeSubcategoria && (
+                        <p className="text-sm text-gray-600 mt-1">{servicoPersonalizado.nomeSubcategoria}</p>
+                      )}
+                    </div>
+                    <Badge variant="secondary" className="font-mono">
+                      R$ {parseFloat(servicoPersonalizado.valorBase).toFixed(2)}/m²
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="largura-outros">Largura</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="largura-outros"
+                        type="text"
+                        placeholder="Ex: 3.50"
+                        value={largura}
+                        onChange={(e) => setLargura(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Select value={unidadeLargura} onValueChange={(value) => setUnidadeLargura(value as 'm' | 'cm' | 'mm')}>
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="m">m</SelectItem>
+                          <SelectItem value="cm">cm</SelectItem>
+                          <SelectItem value="mm">mm</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="altura-outros">Altura</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="altura-outros"
+                        type="text"
+                        placeholder="Ex: 2.00"
+                        value={altura}
+                        onChange={(e) => setAltura(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Select value={unidadeAltura} onValueChange={(value) => setUnidadeAltura(value as 'm' | 'cm' | 'mm')}>
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="m">m</SelectItem>
+                          <SelectItem value="cm">cm</SelectItem>
+                          <SelectItem value="mm">mm</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {area > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                      <div>
+                        <p className="text-sm text-gray-600">Área Calculada</p>
+                        <p className="text-2xl font-bold text-black">{area.toFixed(2)} m²</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Valor Total</p>
+                        <p className="text-2xl font-bold text-black">R$ {valorTotal.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Button onClick={confirmarMedidas} className="w-full" disabled={!largura || !altura || area === 0}>
+                  <Check className="h-4 w-4 mr-2" />
+                  Confirmar Medidas
+                </Button>
+              </div>
+            )}
+
+            {/* ETAPA 4: Medidas - Categorias Normais */}
             {etapaAtual === 'medidas' && modeloSelecionado && (
               <div className="space-y-6">
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -779,24 +893,50 @@ export default function NovoOrcamento() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="largura">Largura (metros)</Label>
-                    <Input
-                      id="largura"
-                      type="text"
-                      placeholder="Ex: 3.50 ou 2.00"
-                      value={largura}
-                      onChange={(e) => setLargura(e.target.value)}
-                    />
+                    <Label htmlFor="largura">Largura</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="largura"
+                        type="text"
+                        placeholder="Ex: 3.50"
+                        value={largura}
+                        onChange={(e) => setLargura(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Select value={unidadeLargura} onValueChange={(value) => setUnidadeLargura(value as 'm' | 'cm' | 'mm')}>
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="m">m</SelectItem>
+                          <SelectItem value="cm">cm</SelectItem>
+                          <SelectItem value="mm">mm</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="altura">Altura (metros)</Label>
-                    <Input
-                      id="altura"
-                      type="text"
-                      placeholder="Ex: 2.00 ou 2400"
-                      value={altura}
-                      onChange={(e) => setAltura(e.target.value)}
-                    />
+                    <Label htmlFor="altura">Altura</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="altura"
+                        type="text"
+                        placeholder="Ex: 2.00"
+                        value={altura}
+                        onChange={(e) => setAltura(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Select value={unidadeAltura} onValueChange={(value) => setUnidadeAltura(value as 'm' | 'cm' | 'mm')}>
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="m">m</SelectItem>
+                          <SelectItem value="cm">cm</SelectItem>
+                          <SelectItem value="mm">mm</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
