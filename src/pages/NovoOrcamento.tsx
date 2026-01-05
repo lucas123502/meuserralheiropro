@@ -61,6 +61,9 @@ export default function NovoOrcamento() {
   const [subcategoriaSelecionada, setSubcategoriaSelecionada] = useState<SubcategoriaOrcamento | null>(null)
   const [modeloSelecionado, setModeloSelecionado] = useState<ModeloOrcamento | null>(null)
 
+  // Estado para controlar modo rápido (usa valor por m²) vs. detalhado (usa estrutura de custos)
+  const [modoRapido, setModoRapido] = useState<boolean>(false)
+
   // Estados para serviço personalizado (categoria "Outros")
   const [servicoPersonalizado, setServicoPersonalizado] = useState({
     nomeServico: '',
@@ -197,6 +200,13 @@ export default function NovoOrcamento() {
 
   const selecionarModelo = (modelo: ModeloOrcamento) => {
     setModeloSelecionado(modelo)
+    setModoRapido(false) // Reset para modo detalhado por padrão
+    setEtapaAtual('medidas')
+  }
+
+  const usarModoRapidoPorM2 = (modelo: ModeloOrcamento) => {
+    setModeloSelecionado(modelo)
+    setModoRapido(true)
     setEtapaAtual('medidas')
   }
 
@@ -300,7 +310,38 @@ export default function NovoOrcamento() {
       return
     }
 
-    // Ir para estrutura de custo
+    // MODO RÁPIDO: Usar valor por m² diretamente (pula estrutura de custos)
+    if (modoRapido && modeloSelecionado) {
+      const larguraNormalizada = largura.replace(',', '.')
+      const alturaNormalizada = altura.replace(',', '.')
+      const larguraMetros = converterParaMetros(parseFloat(larguraNormalizada), unidadeLargura)
+      const alturaMetros = converterParaMetros(parseFloat(alturaNormalizada), unidadeAltura)
+
+      const novoItem: ItemOrcamento = {
+        categoria: categoriaSelecionada!.nome,
+        subcategoria: subcategoriaSelecionada!.nome,
+        modelo: modeloSelecionado.nome,
+        modeloId: modeloSelecionado.id,
+        largura: larguraMetros,
+        altura: alturaMetros,
+        area: area,
+        valorUnitario: obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado,
+        valorTotal: valorTotal // Já calculado pelo useEffect (área × valor/m²)
+      }
+
+      setItens([...itens, novoItem])
+
+      toast({
+        title: 'Item adicionado!',
+        description: `${novoItem.modelo} - R$ ${valorTotal.toFixed(2)} (calculado por m²)`
+      })
+
+      // Ir direto para dados do cliente
+      setEtapaAtual('cliente')
+      return
+    }
+
+    // MODO DETALHADO: Ir para estrutura de custo
     setEtapaAtual('estrutura-custo')
   }
 
@@ -867,63 +908,96 @@ export default function NovoOrcamento() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {obterTodosModelos(subcategoriaSelecionada).map((modelo) => (
-                      <button
-                        key={modelo.id}
-                        onClick={() => selecionarModelo(modelo)}
-                        className="group border-2 border-gray-200 rounded-lg hover:border-black transition-all text-left bg-white hover:shadow-md overflow-hidden"
-                      >
-                        {/* Imagem do modelo */}
-                        {modelo.imagemUrl ? (
-                          <div className="aspect-video bg-gray-100 relative">
-                            <img
-                              src={modelo.imagemUrl}
-                              alt={modelo.nome}
-                              className="w-full h-full object-cover"
-                            />
-                            {modelo.personalizado && (
-                              <Badge className="absolute top-2 right-2 bg-black/70 text-white">
-                                Seu Modelo
-                              </Badge>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="aspect-video bg-gray-100 flex items-center justify-center">
-                            <Grid3x3 className="h-12 w-12 text-gray-300" />
-                            {modelo.personalizado && (
-                              <Badge className="absolute top-2 right-2 bg-black/70 text-white">
-                                Seu Modelo
-                              </Badge>
-                            )}
-                          </div>
-                        )}
+                    {obterTodosModelos(subcategoriaSelecionada).map((modelo) => {
+                      const valorPersonalizadoM2 = obterValorPersonalizadoM2(modelo.id)
+                      const temValorAtualizado = valorPersonalizadoM2 !== null
 
-                        {/* Info do modelo */}
-                        <div className="p-4">
-                          <h4 className="font-semibold text-lg group-hover:text-black mb-1">
-                            {modelo.nome}
-                          </h4>
-                          {modelo.descricao && (
-                            <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                              {modelo.descricao}
-                            </p>
+                      return (
+                        <div
+                          key={modelo.id}
+                          className="border-2 border-gray-200 rounded-lg bg-white overflow-hidden hover:shadow-md transition-all"
+                        >
+                          {/* Imagem do modelo */}
+                          {modelo.imagemUrl ? (
+                            <div className="aspect-video bg-gray-100 relative">
+                              <img
+                                src={modelo.imagemUrl}
+                                alt={modelo.nome}
+                                className="w-full h-full object-cover"
+                              />
+                              {modelo.personalizado && (
+                                <Badge className="absolute top-2 right-2 bg-black/70 text-white">
+                                  Seu Modelo
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="aspect-video bg-gray-100 flex items-center justify-center relative">
+                              <Grid3x3 className="h-12 w-12 text-gray-300" />
+                              {modelo.personalizado && (
+                                <Badge className="absolute top-2 right-2 bg-black/70 text-white">
+                                  Seu Modelo
+                                </Badge>
+                              )}
+                            </div>
                           )}
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-col items-start gap-1">
-                              <Badge variant="secondary" className="font-mono">
-                                R$ {(obterValorPersonalizadoM2(modelo.id) || modelo.precoPorMetroQuadrado).toFixed(2)}/m²
+
+                          {/* Info do modelo */}
+                          <div className="p-4">
+                            <h4 className="font-semibold text-lg mb-1">
+                              {modelo.nome}
+                            </h4>
+                            {modelo.descricao && (
+                              <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                                {modelo.descricao}
+                              </p>
+                            )}
+                            <div className="flex flex-col gap-1 mb-4">
+                              <Badge variant="secondary" className="font-mono w-fit">
+                                R$ {(valorPersonalizadoM2 || modelo.precoPorMetroQuadrado).toFixed(2)}/m²
                               </Badge>
-                              {obterValorPersonalizadoM2(modelo.id) && (
-                                <span className="text-xs text-blue-600">
-                                  Valor baseado nos seus orçamentos
+                              {temValorAtualizado && (
+                                <span className="text-xs text-blue-600 font-medium">
+                                  ✓ Valor baseado nos seus orçamentos
                                 </span>
                               )}
                             </div>
-                            <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-black" />
+
+                            {/* Botões de ação */}
+                            <div className="space-y-2">
+                              {/* Botão principal: Orçamento completo */}
+                              <Button
+                                onClick={() => selecionarModelo(modelo)}
+                                className="w-full"
+                                variant="default"
+                              >
+                                <ChevronRight className="h-4 w-4 mr-2" />
+                                Orçamento Completo
+                              </Button>
+
+                              {/* Botão secundário: Atalho por m² (só aparece se tiver valor atualizado) */}
+                              {temValorAtualizado && (
+                                <Button
+                                  onClick={() => usarModoRapidoPorM2(modelo)}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Grid3x3 className="h-4 w-4 mr-2" />
+                                  Usar valor de m² (rápido)
+                                </Button>
+                              )}
+                            </div>
+
+                            {/* Dica educativa */}
+                            {temValorAtualizado && (
+                              <p className="text-xs text-gray-500 mt-2 text-center">
+                                Use o atalho para orçamentos rápidos sem detalhar custos
+                              </p>
+                            )}
                           </div>
                         </div>
-                      </button>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -1020,6 +1094,21 @@ export default function NovoOrcamento() {
             {/* ETAPA 4: Medidas - Categorias Normais */}
             {etapaAtual === 'medidas' && modeloSelecionado && (
               <div className="space-y-6">
+                {/* Alerta de modo rápido */}
+                {modoRapido && (
+                  <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h5 className="font-semibold text-blue-900 mb-1">Modo Rápido Ativado</h5>
+                        <p className="text-sm text-blue-700">
+                          O orçamento será calculado automaticamente usando o valor de <strong>R$ {(obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado).toFixed(2)}/m²</strong>. Você não precisará detalhar os custos.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <div className="flex items-start justify-between">
                     <div>
