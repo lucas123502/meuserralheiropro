@@ -1059,9 +1059,26 @@ export default function NovoOrcamento() {
                     <Card className="border-2 border-gray-200">
                       <CardContent className="p-4">
                         <div className="space-y-2">
-                          <Label htmlFor="materiais" className="text-base font-semibold">
-                            Materiais
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="materiais" className="text-base font-semibold">
+                              Materiais
+                            </Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-gray-500 cursor-help hover:text-gray-700" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="space-y-1">
+                                  <p className="font-semibold">Informe aqui o custo total dos materiais usados no serviço.</p>
+                                  <p className="text-sm">Exemplos:</p>
+                                  <ul className="text-sm list-disc pl-4 space-y-0.5">
+                                    <li>Metalon, cantoneira, chapa, ferro em geral</li>
+                                  </ul>
+                                  <p className="text-sm mt-1">Use sempre o valor total já somado.</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                           <p className="text-sm text-gray-600">
                             Custo dos materiais necessários para o serviço
                           </p>
@@ -1084,9 +1101,29 @@ export default function NovoOrcamento() {
                     <Card className="border-2 border-gray-200">
                       <CardContent className="p-4">
                         <div className="space-y-2">
-                          <Label htmlFor="kitPadrao" className="text-base font-semibold">
-                            Kit Padrão
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="kitPadrao" className="text-base font-semibold">
+                              Kit Padrão
+                            </Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-gray-500 cursor-help hover:text-gray-700" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="space-y-1">
+                                  <p className="font-semibold">Valor dos itens básicos que normalmente acompanham este tipo de serviço.</p>
+                                  <p className="text-sm">Exemplos:</p>
+                                  <ul className="text-sm list-disc pl-4 space-y-0.5">
+                                    <li>Roldanas</li>
+                                    <li>Trilho</li>
+                                    <li>Batente e guia</li>
+                                    <li>Custos padrão de solda, pintura e deslocamento</li>
+                                  </ul>
+                                  <p className="text-sm mt-1">Esse valor costuma se repetir em serviços semelhantes.</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                           <p className="text-sm text-gray-600">
                             Conjunto de itens básicos incluídos no serviço
                           </p>
@@ -1109,9 +1146,27 @@ export default function NovoOrcamento() {
                     <Card className="border-2 border-gray-200">
                       <CardContent className="p-4">
                         <div className="space-y-2">
-                          <Label htmlFor="diarias" className="text-base font-semibold">
-                            Diárias
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="diarias" className="text-base font-semibold">
+                              Diárias
+                            </Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-gray-500 cursor-help hover:text-gray-700" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="space-y-1">
+                                  <p className="font-semibold">Custo do tempo de trabalho da equipe para fabricar e/ou instalar o serviço.</p>
+                                  <p className="text-sm">Exemplos:</p>
+                                  <ul className="text-sm list-disc pl-4 space-y-0.5">
+                                    <li>1 diária = 1 dia de trabalho</li>
+                                    <li>0,5 diária = meio dia</li>
+                                  </ul>
+                                  <p className="text-sm mt-1">Informe o custo total das diárias deste orçamento.</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                           <p className="text-sm text-gray-600">
                             Custo por dia de trabalho no projeto
                           </p>
@@ -1134,9 +1189,28 @@ export default function NovoOrcamento() {
                     <Card className="border-2 border-gray-200">
                       <CardContent className="p-4">
                         <div className="space-y-2">
-                          <Label htmlFor="maoDeObra" className="text-base font-semibold">
-                            Mão de Obra
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="maoDeObra" className="text-base font-semibold">
+                              Mão de Obra
+                            </Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-gray-500 cursor-help hover:text-gray-700" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="space-y-1">
+                                  <p className="font-semibold">Valor que representa quanto você deseja ganhar com este serviço.</p>
+                                  <p className="text-sm">Normalmente calculado com base em:</p>
+                                  <ul className="text-sm list-disc pl-4 space-y-0.5">
+                                    <li>Meta de ganho mensal</li>
+                                    <li>Dias produtivos no mês</li>
+                                    <li>Tempo que o serviço consome</li>
+                                  </ul>
+                                  <p className="text-sm mt-1">Este campo representa o seu ganho pelo serviço.</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                           <p className="text-sm text-gray-600">
                             Custo da mão de obra especializada
                           </p>
