@@ -917,3 +917,93 @@ export function converterImagemParaBase64(file: File): Promise<string> {
     reader.readAsDataURL(file)
   })
 }
+
+// ============================================
+// FUNÇÕES PARA VALOR PERSONALIZADO POR M²
+// ============================================
+
+/**
+ * Interface para armazenar valores personalizados por m² para cada modelo
+ */
+export interface ValorPersonalizadoM2 {
+  modeloId: string
+  valorPorM2: number
+  atualizadoEm: string
+  baseadoEmOrcamentoId?: string
+}
+
+const STORAGE_KEY_VALORES_M2 = 'valores_personalizados_m2'
+
+/**
+ * Obtém o valor personalizado por m² para um modelo específico
+ * Retorna null se não houver valor personalizado
+ */
+export function obterValorPersonalizadoM2(modeloId: string): number | null {
+  try {
+    const dados = localStorage.getItem(STORAGE_KEY_VALORES_M2)
+    if (!dados) return null
+
+    const valores: ValorPersonalizadoM2[] = JSON.parse(dados)
+    const valorPersonalizado = valores.find(v => v.modeloId === modeloId)
+
+    return valorPersonalizado ? valorPersonalizado.valorPorM2 : null
+  } catch (error) {
+    console.error('Erro ao obter valor personalizado por m²:', error)
+    return null
+  }
+}
+
+/**
+ * Salva ou atualiza o valor personalizado por m² para um modelo
+ */
+export function salvarValorPersonalizadoM2(
+  modeloId: string,
+  valorPorM2: number,
+  orcamentoId?: string
+): void {
+  try {
+    const dados = localStorage.getItem(STORAGE_KEY_VALORES_M2)
+    let valores: ValorPersonalizadoM2[] = dados ? JSON.parse(dados) : []
+
+    // Remove valor anterior do modelo se existir
+    valores = valores.filter(v => v.modeloId !== modeloId)
+
+    // Adiciona novo valor
+    valores.push({
+      modeloId,
+      valorPorM2,
+      atualizadoEm: new Date().toISOString(),
+      baseadoEmOrcamentoId: orcamentoId
+    })
+
+    localStorage.setItem(STORAGE_KEY_VALORES_M2, JSON.stringify(valores))
+  } catch (error) {
+    console.error('Erro ao salvar valor personalizado por m²:', error)
+  }
+}
+
+/**
+ * Remove o valor personalizado por m² de um modelo
+ */
+export function removerValorPersonalizadoM2(modeloId: string): void {
+  try {
+    const dados = localStorage.getItem(STORAGE_KEY_VALORES_M2)
+    if (!dados) return
+
+    let valores: ValorPersonalizadoM2[] = JSON.parse(dados)
+    valores = valores.filter(v => v.modeloId !== modeloId)
+
+    localStorage.setItem(STORAGE_KEY_VALORES_M2, JSON.stringify(valores))
+  } catch (error) {
+    console.error('Erro ao remover valor personalizado por m²:', error)
+  }
+}
+
+/**
+ * Obtém o valor por m² sugerido para um modelo
+ * Prioriza: 1) Valor personalizado, 2) Valor padrão do modelo
+ */
+export function obterValorSugeridoPorM2(modelo: ModeloOrcamento): number {
+  const valorPersonalizado = obterValorPersonalizadoM2(modelo.id)
+  return valorPersonalizado ?? modelo.precoPorMetroQuadrado
+}

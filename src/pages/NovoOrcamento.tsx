@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ArrowLeft, Check, Grid3x3, ChevronRight, User, FileCheck, Trash2, Info } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import SugestaoAtualizacaoValorM2 from '@/components/SugestaoAtualizacaoValorM2'
 import {
   CategoriaOrcamento,
   SubcategoriaOrcamento,
@@ -23,7 +24,9 @@ import {
   obterServicosPersonalizados,
   salvarServicoPersonalizado,
   removerServicoPersonalizado,
-  obterModelosPersonalizados
+  obterModelosPersonalizados,
+  salvarValorPersonalizadoM2,
+  obterValorPersonalizadoM2
 } from '@/types/orcamento'
 
 // Interface para dados do cliente
@@ -38,6 +41,7 @@ interface ItemOrcamento {
   categoria: string
   subcategoria: string
   modelo: string
+  modeloId?: string // ID do modelo para rastreamento de valores personalizados
   largura: number
   altura: number
   area: number
@@ -96,6 +100,16 @@ export default function NovoOrcamento() {
   const [choro, setChoro] = useState<string>('')
   const [taxaMaquininha, setTaxaMaquininha] = useState<string>('')
 
+  // Estados para sugestão de atualização de valor por m²
+  const [mostrarSugestaoValorM2, setMostrarSugestaoValorM2] = useState(false)
+  const [sugestaoValorM2, setSugestaoValorM2] = useState<{
+    modeloId: string
+    modeloNome: string
+    valorAtual: number
+    valorCalculado: number
+    orcamentoId: string
+  } | null>(null)
+
   // Carregar serviços salvos ao montar o componente
   useEffect(() => {
     setServicosSalvos(obterServicosPersonalizados())
@@ -131,7 +145,8 @@ export default function NovoOrcamento() {
       setArea(areaCalculada)
 
       if (modeloSelecionado) {
-        const valor = calcularValorModelo(areaCalculada, modeloSelecionado.precoPorMetroQuadrado)
+        const valorPorM2 = obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado
+        const valor = calcularValorModelo(areaCalculada, valorPorM2)
         setValorTotal(valor)
       } else if (etapaAtual === 'medidas' && servicoPersonalizado.tipoCobranca === 'por_m2' && servicoPersonalizado.valorBase) {
         // Cálculo para serviço personalizado cobrado por m²
@@ -335,6 +350,7 @@ export default function NovoOrcamento() {
       categoria: categoriaSelecionada!.nome,
       subcategoria: subcategoriaSelecionada!.nome,
       modelo: modeloSelecionado!.nome,
+      modeloId: modeloSelecionado!.id,
       largura: larguraMetros,
       altura: alturaMetros,
       area: area,
@@ -441,9 +457,10 @@ export default function NovoOrcamento() {
     }
 
     const valorTotalOrcamento = itens.reduce((acc, item) => acc + item.valorTotal, 0)
+    const orcamentoId = Date.now().toString()
 
     const novoOrcamento = {
-      id: Date.now().toString(),
+      id: orcamentoId,
       data: new Date().toISOString(),
       cliente: dadosCliente.nome,
       clienteCompleto: dadosCliente,
@@ -466,6 +483,30 @@ export default function NovoOrcamento() {
     orcamentos.push(novoOrcamento)
     localStorage.setItem('orcamentos', JSON.stringify(orcamentos))
 
+    // Verificar se há itens com modelo e área para sugestão de atualização de valor por m²
+    const primeiroItemComModelo = itens.find(item => item.modeloId && item.area > 0)
+
+    if (primeiroItemComModelo && primeiroItemComModelo.modeloId) {
+      // Calcular valor por m² baseado no orçamento (sem taxa de maquininha)
+      const valorCalculadoPorM2 = valorTotalOrcamento / primeiroItemComModelo.area
+      const valorAtualPorM2 = obterValorPersonalizadoM2(primeiroItemComModelo.modeloId) || primeiroItemComModelo.valorUnitario
+
+      // Mostrar sugestão se houver diferença significativa (mais de 1%)
+      const diferencaPercentual = Math.abs((valorCalculadoPorM2 - valorAtualPorM2) / valorAtualPorM2)
+
+      if (diferencaPercentual > 0.01) {
+        setSugestaoValorM2({
+          modeloId: primeiroItemComModelo.modeloId,
+          modeloNome: primeiroItemComModelo.modelo,
+          valorAtual: valorAtualPorM2,
+          valorCalculado: valorCalculadoPorM2,
+          orcamentoId: orcamentoId
+        })
+        setMostrarSugestaoValorM2(true)
+        return // Não navegar ainda, aguardar decisão do usuário
+      }
+    }
+
     toast({
       title: 'Orçamento criado!',
       description: 'Orçamento salvo com sucesso'
@@ -481,6 +522,36 @@ export default function NovoOrcamento() {
     setLargura('')
     setAltura('')
     setEtapaAtual('categoria')
+  }
+
+  const handleAtualizarValorM2 = () => {
+    if (sugestaoValorM2) {
+      salvarValorPersonalizadoM2(
+        sugestaoValorM2.modeloId,
+        sugestaoValorM2.valorCalculado,
+        sugestaoValorM2.orcamentoId
+      )
+
+      toast({
+        title: 'Valor atualizado!',
+        description: `O valor por m² do modelo "${sugestaoValorM2.modeloNome}" foi atualizado para R$ ${sugestaoValorM2.valorCalculado.toFixed(2)}`
+      })
+
+      setMostrarSugestaoValorM2(false)
+      setSugestaoValorM2(null)
+      navigate('/orcamentos')
+    }
+  }
+
+  const handleManterValorAtual = () => {
+    toast({
+      title: 'Orçamento criado!',
+      description: 'Orçamento salvo com sucesso'
+    })
+
+    setMostrarSugestaoValorM2(false)
+    setSugestaoValorM2(null)
+    navigate('/orcamentos')
   }
 
   return (
@@ -838,9 +909,16 @@ export default function NovoOrcamento() {
                             </p>
                           )}
                           <div className="flex items-center justify-between">
-                            <Badge variant="secondary" className="font-mono">
-                              R$ {modelo.precoPorMetroQuadrado.toFixed(2)}/m²
-                            </Badge>
+                            <div className="flex flex-col items-start gap-1">
+                              <Badge variant="secondary" className="font-mono">
+                                R$ {(obterValorPersonalizadoM2(modelo.id) || modelo.precoPorMetroQuadrado).toFixed(2)}/m²
+                              </Badge>
+                              {obterValorPersonalizadoM2(modelo.id) && (
+                                <span className="text-xs text-blue-600">
+                                  Valor baseado nos seus orçamentos
+                                </span>
+                              )}
+                            </div>
                             <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-black" />
                           </div>
                         </div>
@@ -950,9 +1028,16 @@ export default function NovoOrcamento() {
                         <p className="text-sm text-gray-600 mt-1">{modeloSelecionado.descricao}</p>
                       )}
                     </div>
-                    <Badge variant="secondary" className="font-mono">
-                      R$ {modeloSelecionado.precoPorMetroQuadrado.toFixed(2)}/m²
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge variant="secondary" className="font-mono">
+                        R$ {(obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado).toFixed(2)}/m²
+                      </Badge>
+                      {obterValorPersonalizadoM2(modeloSelecionado.id) && (
+                        <span className="text-xs text-blue-600">
+                          Valor baseado nos seus orçamentos
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1044,9 +1129,16 @@ export default function NovoOrcamento() {
                       </p>
                     </div>
                     {modeloSelecionado && (
-                      <Badge variant="secondary" className="font-mono">
-                        R$ {modeloSelecionado.precoPorMetroQuadrado.toFixed(2)}/m²
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="secondary" className="font-mono">
+                          R$ {(obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado).toFixed(2)}/m²
+                        </Badge>
+                        {obterValorPersonalizadoM2(modeloSelecionado.id) && (
+                          <span className="text-xs text-blue-600">
+                            Valor baseado nos seus orçamentos
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1496,6 +1588,19 @@ export default function NovoOrcamento() {
             )}
           </CardContent>
         </Card>
+
+        {/* Sugestão de atualização de valor por m² */}
+        {mostrarSugestaoValorM2 && sugestaoValorM2 && (
+          <div className="mt-6">
+            <SugestaoAtualizacaoValorM2
+              modeloNome={sugestaoValorM2.modeloNome}
+              valorAtualPorM2={sugestaoValorM2.valorAtual}
+              valorCalculadoPorM2={sugestaoValorM2.valorCalculado}
+              onAtualizar={handleAtualizarValorM2}
+              onManter={handleManterValorAtual}
+            />
+          </div>
+        )}
       </div>
     </div>
   )
