@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Check, Grid3x3, ChevronRight, User, FileCheck, Trash2 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { ArrowLeft, Check, Grid3x3, ChevronRight, User, FileCheck, Trash2, Info } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import {
   CategoriaOrcamento,
@@ -88,10 +89,12 @@ export default function NovoOrcamento() {
   const [observacoes, setObservacoes] = useState('')
 
   // Estados de estrutura de custo
-  const [materiais, setMateriais] = useState<number>(0)
-  const [kitPadrao, setKitPadrao] = useState<number>(0)
-  const [diarias, setDiarias] = useState<number>(0)
-  const [maoDeObra, setMaoDeObra] = useState<number>(0)
+  const [materiais, setMateriais] = useState<string>('')
+  const [kitPadrao, setKitPadrao] = useState<string>('')
+  const [diarias, setDiarias] = useState<string>('')
+  const [maoDeObra, setMaoDeObra] = useState<string>('')
+  const [choro, setChoro] = useState<string>('')
+  const [taxaMaquininha, setTaxaMaquininha] = useState<string>('')
 
   // Carregar serviços salvos ao montar o componente
   useEffect(() => {
@@ -293,8 +296,15 @@ export default function NovoOrcamento() {
     const larguraMetros = converterParaMetros(parseFloat(larguraNormalizada), unidadeLargura)
     const alturaMetros = converterParaMetros(parseFloat(alturaNormalizada), unidadeAltura)
 
-    // Calcular valor total (soma direta, sem aplicar margem)
-    const valorTotal = materiais + kitPadrao + diarias + maoDeObra
+    // Converter strings para números (soma direta de todos os componentes)
+    const materiaisNum = parseFloat(materiais) || 0
+    const kitPadraoNum = parseFloat(kitPadrao) || 0
+    const diariasNum = parseFloat(diarias) || 0
+    const maoDeObraNum = parseFloat(maoDeObra) || 0
+    const choroNum = parseFloat(choro) || 0
+
+    // Calcular valor total antes da taxa (inclui choro/margem de negociação)
+    const valorTotal = materiaisNum + kitPadraoNum + diariasNum + maoDeObraNum + choroNum
 
     // Para serviço personalizado por m²
     if (categoriaSelecionada?.id === 'cat-outros' && servicoPersonalizado.tipoCobranca === 'por_m2') {
@@ -1041,174 +1051,241 @@ export default function NovoOrcamento() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-lg">Componentes de Custo</h4>
+                <TooltipProvider>
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-lg">Componentes de Custo</h4>
 
-                  {/* Materiais */}
-                  <Card className="border-2 border-gray-200">
-                    <CardContent className="p-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="materiais" className="text-base font-semibold">
-                          Materiais
-                        </Label>
-                        <p className="text-sm text-gray-600">
-                          Custo dos materiais necessários para o serviço
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold">R$</span>
-                          <Input
-                            id="materiais"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00"
-                            value={materiais || ''}
-                            onChange={(e) => setMateriais(parseFloat(e.target.value) || 0)}
-                            className="text-lg font-mono"
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Kit Padrão */}
-                  <Card className="border-2 border-gray-200">
-                    <CardContent className="p-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="kitPadrao" className="text-base font-semibold">
-                          Kit Padrão
-                        </Label>
-                        <p className="text-sm text-gray-600">
-                          Conjunto de itens básicos incluídos no serviço
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold">R$</span>
-                          <Input
-                            id="kitPadrao"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00"
-                            value={kitPadrao || ''}
-                            onChange={(e) => setKitPadrao(parseFloat(e.target.value) || 0)}
-                            className="text-lg font-mono"
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Diárias */}
-                  <Card className="border-2 border-gray-200">
-                    <CardContent className="p-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="diarias" className="text-base font-semibold">
-                          Diárias
-                        </Label>
-                        <p className="text-sm text-gray-600">
-                          Custo por dia de trabalho no projeto
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold">R$</span>
-                          <Input
-                            id="diarias"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00"
-                            value={diarias || ''}
-                            onChange={(e) => setDiarias(parseFloat(e.target.value) || 0)}
-                            className="text-lg font-mono"
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Mão de Obra */}
-                  <Card className="border-2 border-gray-200">
-                    <CardContent className="p-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="maoDeObra" className="text-base font-semibold">
-                          Mão de Obra
-                        </Label>
-                        <p className="text-sm text-gray-600">
-                          Custo da mão de obra especializada
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold">R$</span>
-                          <Input
-                            id="maoDeObra"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00"
-                            value={maoDeObra || ''}
-                            onChange={(e) => setMaoDeObra(parseFloat(e.target.value) || 0)}
-                            className="text-lg font-mono"
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Indicador de Margem (somente visualização) */}
-                  <Card className="border-2 border-blue-300 bg-blue-50">
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-base font-semibold">
-                            Indicador de Eficiência
+                    {/* Materiais */}
+                    <Card className="border-2 border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="materiais" className="text-base font-semibold">
+                            Materiais
                           </Label>
-                          <Badge variant="secondary" className="font-mono text-lg px-3 py-1">
-                            {(() => {
-                              const custosServico = materiais + kitPadrao + diarias
-                              if (custosServico === 0) return '0.0%'
-                              const margemCalculada = (maoDeObra / custosServico) * 100
-                              return `${margemCalculada.toFixed(1)}%`
-                            })()}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          Este percentual mostra quanto a mão de obra representa em relação aos custos do serviço (materiais + kit + diárias). É um indicador para avaliar a eficiência do orçamento.
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Resumo de Custos */}
-                  <Card className="border-2 border-green-300 bg-green-50">
-                    <CardContent className="p-6">
-                      <h4 className="font-semibold text-lg mb-4">Resumo de Custos</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-700">Materiais:</span>
-                          <span className="font-mono font-semibold">R$ {materiais.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-700">Kit Padrão:</span>
-                          <span className="font-mono font-semibold">R$ {kitPadrao.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-700">Diárias:</span>
-                          <span className="font-mono font-semibold">R$ {diarias.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-700">Mão de Obra:</span>
-                          <span className="font-mono font-semibold">R$ {maoDeObra.toFixed(2)}</span>
-                        </div>
-                        <div className="border-t-2 border-green-400 pt-3 mt-3">
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-xl">Valor Total do Orçamento:</span>
-                            <span className="font-mono font-bold text-2xl text-green-700">
-                              R$ {(materiais + kitPadrao + diarias + maoDeObra).toFixed(2)}
-                            </span>
+                          <p className="text-sm text-gray-600">
+                            Custo dos materiais necessários para o serviço
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-semibold">R$</span>
+                            <Input
+                              id="materiais"
+                              type="text"
+                              placeholder="0.00"
+                              value={materiais}
+                              onChange={(e) => setMateriais(e.target.value)}
+                              className="text-lg font-mono"
+                            />
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Kit Padrão */}
+                    <Card className="border-2 border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="kitPadrao" className="text-base font-semibold">
+                            Kit Padrão
+                          </Label>
+                          <p className="text-sm text-gray-600">
+                            Conjunto de itens básicos incluídos no serviço
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-semibold">R$</span>
+                            <Input
+                              id="kitPadrao"
+                              type="text"
+                              placeholder="0.00"
+                              value={kitPadrao}
+                              onChange={(e) => setKitPadrao(e.target.value)}
+                              className="text-lg font-mono"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Diárias */}
+                    <Card className="border-2 border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="diarias" className="text-base font-semibold">
+                            Diárias
+                          </Label>
+                          <p className="text-sm text-gray-600">
+                            Custo por dia de trabalho no projeto
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-semibold">R$</span>
+                            <Input
+                              id="diarias"
+                              type="text"
+                              placeholder="0.00"
+                              value={diarias}
+                              onChange={(e) => setDiarias(e.target.value)}
+                              className="text-lg font-mono"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Mão de Obra */}
+                    <Card className="border-2 border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="maoDeObra" className="text-base font-semibold">
+                            Mão de Obra
+                          </Label>
+                          <p className="text-sm text-gray-600">
+                            Custo da mão de obra especializada
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-semibold">R$</span>
+                            <Input
+                              id="maoDeObra"
+                              type="text"
+                              placeholder="0.00"
+                              value={maoDeObra}
+                              onChange={(e) => setMaoDeObra(e.target.value)}
+                              className="text-lg font-mono"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Choro / Margem de Negociação */}
+                    <Card className="border-2 border-purple-200 bg-purple-50">
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="choro" className="text-base font-semibold">
+                              Choro / Margem de Negociação
+                            </Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-purple-600 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p>Valor reservado para negociação com o cliente. Pode ser usado para desconto sem afetar sua margem real.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            Valor opcional para facilitar negociação (não é lucro)
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-semibold">R$</span>
+                            <Input
+                              id="choro"
+                              type="text"
+                              placeholder="0.00"
+                              value={choro}
+                              onChange={(e) => setChoro(e.target.value)}
+                              className="text-lg font-mono"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Taxa da Maquininha */}
+                    <Card className="border-2 border-orange-200 bg-orange-50">
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="taxaMaquininha" className="text-base font-semibold">
+                              Taxa da Maquininha (%)
+                            </Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-orange-600 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p>Informe a taxa cobrada pela sua maquininha para parcelamento no cartão de crédito. Consulte seu banco ou operadora.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            Taxa aplicada apenas para pagamento parcelado
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="taxaMaquininha"
+                              type="text"
+                              placeholder="Ex: 15"
+                              value={taxaMaquininha}
+                              onChange={(e) => setTaxaMaquininha(e.target.value)}
+                              className="text-lg font-mono"
+                            />
+                            <span className="text-lg font-semibold">%</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Resumo de Custos */}
+                    <Card className="border-2 border-green-300 bg-green-50">
+                      <CardContent className="p-6">
+                        <h4 className="font-semibold text-lg mb-4">Resumo de Custos</h4>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-700">Materiais:</span>
+                            <span className="font-mono font-semibold">R$ {(parseFloat(materiais) || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-700">Kit Padrão:</span>
+                            <span className="font-mono font-semibold">R$ {(parseFloat(kitPadrao) || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-700">Diárias:</span>
+                            <span className="font-mono font-semibold">R$ {(parseFloat(diarias) || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-700">Mão de Obra:</span>
+                            <span className="font-mono font-semibold">R$ {(parseFloat(maoDeObra) || 0).toFixed(2)}</span>
+                          </div>
+                          {parseFloat(choro) > 0 && (
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-gray-700">Choro / Margem:</span>
+                              <span className="font-mono font-semibold">R$ {(parseFloat(choro) || 0).toFixed(2)}</span>
+                            </div>
+                          )}
+                          <div className="border-t-2 border-green-400 pt-3 mt-3">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="font-bold text-lg">Valor à Vista:</span>
+                              <span className="font-mono font-bold text-2xl text-green-700">
+                                R$ {((parseFloat(materiais) || 0) + (parseFloat(kitPadrao) || 0) + (parseFloat(diarias) || 0) + (parseFloat(maoDeObra) || 0) + (parseFloat(choro) || 0)).toFixed(2)}
+                              </span>
+                            </div>
+                            {parseFloat(taxaMaquininha) > 0 && (
+                              <>
+                                <div className="flex justify-between items-center text-sm mb-2">
+                                  <span className="text-gray-700">Taxa da Maquininha ({taxaMaquininha}%):</span>
+                                  <span className="font-mono font-semibold text-orange-600">
+                                    + R$ {(((parseFloat(materiais) || 0) + (parseFloat(kitPadrao) || 0) + (parseFloat(diarias) || 0) + (parseFloat(maoDeObra) || 0) + (parseFloat(choro) || 0)) * (parseFloat(taxaMaquininha) / 100)).toFixed(2)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center pt-2 border-t border-green-400">
+                                  <span className="font-bold text-lg">Valor Parcelado em 12x:</span>
+                                  <div className="text-right">
+                                    <div className="font-mono font-bold text-xl text-green-700">
+                                      12x R$ {((((parseFloat(materiais) || 0) + (parseFloat(kitPadrao) || 0) + (parseFloat(diarias) || 0) + (parseFloat(maoDeObra) || 0) + (parseFloat(choro) || 0)) * (1 + parseFloat(taxaMaquininha) / 100)) / 12).toFixed(2)}
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">
+                                      Total: R$ {(((parseFloat(materiais) || 0) + (parseFloat(kitPadrao) || 0) + (parseFloat(diarias) || 0) + (parseFloat(maoDeObra) || 0) + (parseFloat(choro) || 0)) * (1 + parseFloat(taxaMaquininha) / 100)).toFixed(2)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TooltipProvider>
 
                 <Button onClick={confirmarEstruturaCusto} className="w-full" size="lg">
                   <Check className="h-5 w-5 mr-2" />
