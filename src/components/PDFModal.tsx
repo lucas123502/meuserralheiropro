@@ -30,6 +30,8 @@ export default function PDFModal({ open, onClose, pdfUrl, titulo }: PDFModalProp
               src={pdfUrl}
               className="w-full h-full border-0"
               title="Visualização do PDF"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+              allow="fullscreen"
             />
           )}
         </div>
