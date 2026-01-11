@@ -3,11 +3,10 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, FileText, Calendar, DollarSign, Eye, Download, CheckCircle, Settings } from 'lucide-react'
+import { Plus, FileText, Calendar, DollarSign, Download, CheckCircle, Settings } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { visualizarPDF, baixarPDF } from '@/lib/pdf-generator'
-import PDFModal from '@/components/PDFModal'
+import { baixarPDF } from '@/lib/pdf-generator'
 import { useToast } from '@/hooks/use-toast'
 import { Pedido } from '@/types/pedido'
 import { salvarClienteAutomatico } from '@/lib/cliente-manager'
@@ -38,9 +37,6 @@ interface Orcamento {
 export default function Orcamentos() {
   const { toast } = useToast()
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
-  const [modalAberto, setModalAberto] = useState(false)
-  const [pdfUrl, setPdfUrl] = useState('')
-  const [tituloModal, setTituloModal] = useState('')
 
   useEffect(() => {
     // Carregar orçamentos do localStorage
@@ -233,14 +229,6 @@ export default function Orcamentos() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleVisualizarPDF(orcamento)}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Visualizar PDF
-                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
