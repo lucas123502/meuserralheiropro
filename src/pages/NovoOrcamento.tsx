@@ -84,6 +84,9 @@ export default function NovoOrcamento() {
   const [area, setArea] = useState<number>(0)
   const [valorTotal, setValorTotal] = useState<number>(0)
 
+  // Estado para valor por m² editável na tela de medidas
+  const [valorM2Editavel, setValorM2Editavel] = useState<string>('')
+
   // Estados do cliente
   const [dadosCliente, setDadosCliente] = useState<DadosCliente>({
     nome: '',
@@ -148,7 +151,11 @@ export default function NovoOrcamento() {
       setArea(areaCalculada)
 
       if (modeloSelecionado) {
-        const valorPorM2 = obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado
+        // Usar valor editável se disponível, senão fallback para o modelo
+        const valorM2Num = parseFloat(valorM2Editavel.replace(',', '.'))
+        const valorPorM2 = !isNaN(valorM2Num) && valorM2Num > 0
+          ? valorM2Num
+          : (obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado)
         const valor = calcularValorModelo(areaCalculada, valorPorM2)
         setValorTotal(valor)
       } else if (etapaAtual === 'medidas' && servicoPersonalizado.tipoCobranca === 'por_m2' && servicoPersonalizado.valorBase) {
@@ -173,7 +180,7 @@ export default function NovoOrcamento() {
         setValorTotal(0)
       }
     }
-  }, [largura, altura, unidadeLargura, unidadeAltura, modeloSelecionado, servicoPersonalizado.tipoCobranca, servicoPersonalizado.valorBase, etapaAtual])
+  }, [largura, altura, unidadeLargura, unidadeAltura, modeloSelecionado, valorM2Editavel, servicoPersonalizado.tipoCobranca, servicoPersonalizado.valorBase, etapaAtual])
 
   const selecionarCategoria = (categoria: CategoriaOrcamento) => {
     setCategoriaSelecionada(categoria)
@@ -201,12 +208,16 @@ export default function NovoOrcamento() {
   const selecionarModelo = (modelo: ModeloOrcamento) => {
     setModeloSelecionado(modelo)
     setModoRapido(false) // Reset para modo detalhado por padrão
+    const valorInicial = obterValorPersonalizadoM2(modelo.id) || modelo.precoPorMetroQuadrado
+    setValorM2Editavel(valorInicial.toFixed(2))
     setEtapaAtual('medidas')
   }
 
   const usarModoRapidoPorM2 = (modelo: ModeloOrcamento) => {
     setModeloSelecionado(modelo)
     setModoRapido(true)
+    const valorInicial = obterValorPersonalizadoM2(modelo.id) || modelo.precoPorMetroQuadrado
+    setValorM2Editavel(valorInicial.toFixed(2))
     setEtapaAtual('medidas')
   }
 
@@ -317,6 +328,11 @@ export default function NovoOrcamento() {
       const larguraMetros = converterParaMetros(parseFloat(larguraNormalizada), unidadeLargura)
       const alturaMetros = converterParaMetros(parseFloat(alturaNormalizada), unidadeAltura)
 
+      const valorM2Num = parseFloat(valorM2Editavel.replace(',', '.'))
+      const valorUnitarioFinal = !isNaN(valorM2Num) && valorM2Num > 0
+        ? valorM2Num
+        : (obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado)
+
       const novoItem: ItemOrcamento = {
         categoria: categoriaSelecionada!.nome,
         subcategoria: subcategoriaSelecionada!.nome,
@@ -325,7 +341,7 @@ export default function NovoOrcamento() {
         largura: larguraMetros,
         altura: alturaMetros,
         area: area,
-        valorUnitario: obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado,
+        valorUnitario: valorUnitarioFinal,
         valorTotal: valorTotal // Já calculado pelo useEffect (área × valor/m²)
       }
 
@@ -1102,7 +1118,7 @@ export default function NovoOrcamento() {
                       <div>
                         <h5 className="font-semibold text-blue-900 mb-1">Modo Rápido Ativado</h5>
                         <p className="text-sm text-blue-700">
-                          O orçamento será calculado automaticamente usando o valor de <strong>R$ {(obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado).toFixed(2)}/m²</strong>. Você não precisará detalhar os custos.
+                          O orçamento será calculado automaticamente usando o valor de <strong>R$ {valorM2Editavel || (obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado).toFixed(2)}/m²</strong>. Você pode editar o valor ao lado antes de confirmar.
                         </p>
                       </div>
                     </div>
@@ -1110,17 +1126,29 @@ export default function NovoOrcamento() {
                 )}
 
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between flex-wrap gap-3">
                     <div>
                       <h4 className="font-semibold text-lg">{modeloSelecionado.nome}</h4>
                       {modeloSelecionado.descricao && (
                         <p className="text-sm text-gray-600 mt-1">{modeloSelecionado.descricao}</p>
                       )}
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge variant="secondary" className="font-mono">
-                        R$ {(obterValorPersonalizadoM2(modeloSelecionado.id) || modeloSelecionado.precoPorMetroQuadrado).toFixed(2)}/m²
-                      </Badge>
+                    <div className="flex flex-col items-end gap-1 min-w-[160px]">
+                      <Label htmlFor="valorM2Editavel" className="text-sm font-medium text-gray-700">
+                        Valor por m²
+                      </Label>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-semibold text-gray-700">R$</span>
+                        <Input
+                          id="valorM2Editavel"
+                          type="text"
+                          value={valorM2Editavel}
+                          onChange={(e) => setValorM2Editavel(e.target.value)}
+                          className="w-28 text-right font-mono font-semibold text-sm h-8"
+                          placeholder="0.00"
+                        />
+                        <span className="text-sm text-gray-600">/m²</span>
+                      </div>
                       {obterValorPersonalizadoM2(modeloSelecionado.id) && (
                         <span className="text-xs text-blue-600">
                           Valor baseado nos seus orçamentos
