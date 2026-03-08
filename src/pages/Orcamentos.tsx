@@ -47,24 +47,6 @@ export default function Orcamentos() {
     }
   }, [])
 
-  const handleVisualizarPDF = (orcamento: Orcamento) => {
-    const url = visualizarPDF(orcamento)
-    setPdfUrl(url)
-    setTituloModal(orcamento.cliente || 'Cliente sem nome')
-    setModalAberto(true)
-  }
-
-  const handleFecharModal = () => {
-    setModalAberto(false)
-    // Limpar URL após um pequeno delay para dar tempo da animação de fechamento
-    setTimeout(() => {
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl)
-        setPdfUrl('')
-      }
-    }, 300)
-  }
-
   const converterEmPedido = (orcamento: Orcamento) => {
     if (orcamento.convertidoEmPedido) {
       toast({
@@ -259,12 +241,6 @@ export default function Orcamentos() {
         ))}
       </div>
 
-      <PDFModal
-        open={modalAberto}
-        onClose={handleFecharModal}
-        pdfUrl={pdfUrl}
-        titulo={tituloModal}
-      />
     </div>
   )
 }
