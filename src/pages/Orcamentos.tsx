@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, FileText, Calendar, DollarSign, Download, CheckCircle, Settings } from 'lucide-react'
+import { Plus, FileText, Calendar, DollarSign, Download, CheckCircle, Settings, MessageCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { baixarPDF } from '@/lib/pdf-generator'
@@ -32,6 +32,47 @@ interface Orcamento {
   }
   observacoes?: string
   convertidoEmPedido?: boolean
+  dataEnvioWhatsApp?: string
+}
+
+function gerarMensagemWhatsApp(orcamento: Orcamento): string {
+  const nomeCliente = orcamento.clienteCompleto?.nome || orcamento.cliente || 'Cliente'
+  const dataFormatada = format(
+    typeof orcamento.data === 'string' ? new Date(orcamento.data) : orcamento.data,
+    "dd/MM/yyyy",
+    { locale: ptBR }
+  )
+  const valorFormatado = (Number.isFinite(orcamento.valor) ? orcamento.valor : 0).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+
+  const largura = parseFloat(orcamento.medidas.largura) || 0
+  const altura = parseFloat(orcamento.medidas.altura) || 0
+  const quantidade = parseInt(orcamento.medidas.quantidade) || 1
+
+  let mensagem = `Olá ${nomeCliente}! 👋\n\n`
+  mensagem += `Segue o orçamento solicitado:\n\n`
+  mensagem += `📋 *ORÇAMENTO Nº ${orcamento.id}*\n`
+  mensagem += `📅 Data: ${dataFormatada}\n\n`
+  mensagem += `🔧 *Serviço:* ${orcamento.tipoServico}\n`
+  mensagem += `📐 *Modelo:* ${orcamento.modelo}\n`
+
+  if (largura > 0 && altura > 0) {
+    mensagem += `📏 *Medidas:* ${largura.toFixed(2)}m (L) × ${altura.toFixed(2)}m (A)`
+    if (quantidade > 1) mensagem += ` × ${quantidade} und`
+    mensagem += `\n`
+  }
+
+  if (orcamento.observacoes) {
+    mensagem += `\n📝 *Observações:* ${orcamento.observacoes}\n`
+  }
+
+  mensagem += `\n💰 *VALOR TOTAL: R$ ${valorFormatado}*\n\n`
+  mensagem += `_Este valor é uma estimativa inicial e pode sofrer alterações após avaliação detalhada no local._\n\n`
+  mensagem += `Qualquer dúvida, estou à disposição! 😊`
+
+  return mensagem
 }
 
 export default function Orcamentos() {
@@ -39,7 +80,6 @@ export default function Orcamentos() {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
 
   useEffect(() => {
-    // Carregar orçamentos do localStorage
     const saved = localStorage.getItem('orcamentos')
     if (saved) {
       const parsed = JSON.parse(saved)
@@ -57,7 +97,6 @@ export default function Orcamentos() {
       return
     }
 
-    // Garantir que o cliente está salvo antes de converter em pedido
     let clienteId = orcamento.clienteId || ''
 
     if (orcamento.clienteCompleto && orcamento.clienteCompleto.nome) {
@@ -85,7 +124,6 @@ export default function Orcamentos() {
     pedidos.push(novoPedido)
     localStorage.setItem('pedidos', JSON.stringify(pedidos))
 
-    // Marcar orçamento como convertido e atualizar clienteId se necessário
     const orcamentosAtualizados = orcamentos.map(o =>
       o.id === orcamento.id ? { ...o, convertidoEmPedido: true, clienteId } : o
     )
@@ -95,6 +133,45 @@ export default function Orcamentos() {
     toast({
       title: 'Pedido criado com sucesso!',
       description: 'O orçamento foi convertido em pedido'
+    })
+  }
+
+  const enviarWhatsApp = (orcamento: Orcamento) => {
+    const telefone = orcamento.clienteCompleto?.telefone || ''
+    const telefoneLimpo = telefone.replace(/\D/g, '')
+
+    if (!telefoneLimpo) {
+      toast({
+        title: 'Telefone não encontrado',
+        description: 'Este orçamento não possui telefone do cliente cadastrado',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    // Adicionar código do Brasil se não tiver
+    const telefoneFormatado = telefoneLimpo.startsWith('55')
+      ? telefoneLimpo
+      : `55${telefoneLimpo}`
+
+    const mensagem = gerarMensagemWhatsApp(orcamento)
+    const url = `https://wa.me/${telefoneFormatado}?text=${encodeURIComponent(mensagem)}`
+
+    // Marcar dataEnvio no orçamento
+    const agora = new Date().toISOString()
+    const orcamentosAtualizados = orcamentos.map(o =>
+      o.id === orcamento.id
+        ? { ...o, status: 'enviado' as const, dataEnvioWhatsApp: agora }
+        : o
+    )
+    setOrcamentos(orcamentosAtualizados)
+    localStorage.setItem('orcamentos', JSON.stringify(orcamentosAtualizados))
+
+    window.open(url, '_blank')
+
+    toast({
+      title: 'WhatsApp aberto!',
+      description: 'Orçamento marcado como enviado'
     })
   }
 
@@ -171,13 +248,19 @@ export default function Orcamentos() {
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <h3 className="text-lg font-semibold text-gray-900">
                         {orcamento.cliente || 'Cliente sem nome'}
                       </h3>
                       <Badge variant={orcamento.status === 'enviado' ? 'default' : 'secondary'}>
                         {orcamento.status === 'enviado' ? 'Enviado' : 'Rascunho'}
                       </Badge>
+                      {orcamento.dataEnvioWhatsApp && (
+                        <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+                          <MessageCircle className="h-3 w-3 mr-1" />
+                          WhatsApp enviado
+                        </Badge>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -194,6 +277,12 @@ export default function Orcamentos() {
                         )}
                       </span>
                     </div>
+
+                    {orcamento.clienteCompleto?.telefone && (
+                      <div className="text-sm text-gray-500">
+                        Telefone: {orcamento.clienteCompleto.telefone}
+                      </div>
+                    )}
                   </div>
 
                   <div className="text-right">
@@ -210,7 +299,7 @@ export default function Orcamentos() {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     variant="outline"
                     size="sm"
@@ -219,6 +308,17 @@ export default function Orcamentos() {
                     <Download className="h-4 w-4 mr-2" />
                     Baixar PDF
                   </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-green-700 border-green-300 hover:bg-green-50"
+                    onClick={() => enviarWhatsApp(orcamento)}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Enviar no WhatsApp
+                  </Button>
+
                   {!orcamento.convertidoEmPedido && orcamento.status === 'enviado' && (
                     <Button
                       size="sm"
@@ -240,7 +340,6 @@ export default function Orcamentos() {
           </Card>
         ))}
       </div>
-
     </div>
   )
 }

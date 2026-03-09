@@ -47,6 +47,7 @@ interface ItemOrcamento {
   area: number
   valorUnitario: number
   valorTotal: number
+  modoOrcamento?: 'rapido' | 'detalhado'
 }
 
 type Etapa = 'categoria' | 'subcategoria' | 'modelo' | 'medidas' | 'estrutura-custo' | 'cliente' | 'finalizar' | 'servico-personalizado'
@@ -294,7 +295,7 @@ export default function NovoOrcamento() {
     }
   }
 
-  const confirmarMedidas = () => {
+  const confirmarMedidas = (modo?: 'rapido' | 'detalhado') => {
     // Para serviço personalizado por m²
     if (categoriaSelecionada?.id === 'cat-outros' && servicoPersonalizado.tipoCobranca === 'por_m2') {
       if (!largura || !altura || area === 0) {
@@ -303,6 +304,29 @@ export default function NovoOrcamento() {
           description: 'Preencha largura e altura válidas',
           variant: 'destructive'
         })
+        return
+      }
+
+      if (modo === 'rapido') {
+        const larguraNormalizada = largura.replace(',', '.')
+        const alturaNormalizada = altura.replace(',', '.')
+        const larguraMetros = converterParaMetros(parseFloat(larguraNormalizada), unidadeLargura)
+        const alturaMetros = converterParaMetros(parseFloat(alturaNormalizada), unidadeAltura)
+        const valorBaseNum = parseFloat(servicoPersonalizado.valorBase)
+        const novoItem: ItemOrcamento = {
+          categoria: 'Outros',
+          subcategoria: servicoPersonalizado.nomeSubcategoria || 'Serviço Personalizado',
+          modelo: servicoPersonalizado.nomeServico,
+          largura: larguraMetros,
+          altura: alturaMetros,
+          area: area,
+          valorUnitario: valorBaseNum,
+          valorTotal: valorTotal,
+          modoOrcamento: 'rapido'
+        }
+        setItens([...itens, novoItem])
+        toast({ title: 'Item adicionado!', description: `${novoItem.modelo} - R$ ${valorTotal.toFixed(2)}` })
+        setEtapaAtual('cliente')
         return
       }
 
@@ -322,7 +346,7 @@ export default function NovoOrcamento() {
     }
 
     // MODO RÁPIDO: Usar valor por m² diretamente (pula estrutura de custos)
-    if (modoRapido && modeloSelecionado) {
+    if ((modo === 'rapido' || modoRapido) && modeloSelecionado) {
       const larguraNormalizada = largura.replace(',', '.')
       const alturaNormalizada = altura.replace(',', '.')
       const larguraMetros = converterParaMetros(parseFloat(larguraNormalizada), unidadeLargura)
@@ -342,7 +366,8 @@ export default function NovoOrcamento() {
         altura: alturaMetros,
         area: area,
         valorUnitario: valorUnitarioFinal,
-        valorTotal: valorTotal // Já calculado pelo useEffect (área × valor/m²)
+        valorTotal: valorTotal, // Já calculado pelo useEffect (área × valor/m²)
+        modoOrcamento: 'rapido'
       }
 
       setItens([...itens, novoItem])
@@ -1100,10 +1125,36 @@ export default function NovoOrcamento() {
                   </div>
                 )}
 
-                <Button onClick={confirmarMedidas} className="w-full" disabled={!largura || !altura || area === 0}>
-                  <Check className="h-4 w-4 mr-2" />
-                  Confirmar Medidas
-                </Button>
+                {area > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-center text-gray-600">Como você quer prosseguir?</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Button
+                        onClick={() => confirmarMedidas('rapido')}
+                        variant="outline"
+                        className="w-full border-2 border-green-500 text-green-700 hover:bg-green-50"
+                      >
+                        <Check className="h-4 w-4 mr-2" />
+                        Gerar orçamento rápido
+                      </Button>
+                      <Button
+                        onClick={() => confirmarMedidas('detalhado')}
+                        className="w-full"
+                      >
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                        Detalhar custos
+                      </Button>
+                    </div>
+                    <p className="text-xs text-center text-gray-400">
+                      Rápido: usa o valor por m² direto · Detalhado: preencha materiais e mão de obra
+                    </p>
+                  </div>
+                ) : (
+                  <Button className="w-full" disabled>
+                    <Check className="h-4 w-4 mr-2" />
+                    Informe as medidas para continuar
+                  </Button>
+                )}
               </div>
             )}
 
@@ -1215,17 +1266,45 @@ export default function NovoOrcamento() {
                         <p className="text-2xl font-bold text-black">{area.toFixed(2)} m²</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Valor Total</p>
+                        <p className="text-sm text-gray-600">Valor por m²</p>
                         <p className="text-2xl font-bold text-black">R$ {valorTotal.toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
                 )}
 
-                <Button onClick={confirmarMedidas} className="w-full" disabled={!largura || !altura || area === 0}>
-                  <Check className="h-4 w-4 mr-2" />
-                  Confirmar Medidas
-                </Button>
+                {area > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-center text-gray-600">Como você quer prosseguir?</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Button
+                        onClick={() => confirmarMedidas('rapido')}
+                        variant="outline"
+                        className="w-full border-2 border-green-500 text-green-700 hover:bg-green-50"
+                        disabled={!largura || !altura || area === 0}
+                      >
+                        <Check className="h-4 w-4 mr-2" />
+                        Gerar orçamento rápido
+                      </Button>
+                      <Button
+                        onClick={() => confirmarMedidas('detalhado')}
+                        className="w-full"
+                        disabled={!largura || !altura || area === 0}
+                      >
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                        Detalhar custos
+                      </Button>
+                    </div>
+                    <p className="text-xs text-center text-gray-400">
+                      Rápido: usa o valor por m² direto · Detalhado: preencha materiais e mão de obra
+                    </p>
+                  </div>
+                ) : (
+                  <Button className="w-full" disabled>
+                    <Check className="h-4 w-4 mr-2" />
+                    Informe as medidas para continuar
+                  </Button>
+                )}
               </div>
             )}
 

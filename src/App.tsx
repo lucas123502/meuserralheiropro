@@ -15,6 +15,7 @@ import Relatorios from '@/pages/Relatorios'
 import HelpSupport from '@/pages/HelpSupport'
 import Configuracoes from '@/pages/Configuracoes'
 import Onboarding from '@/pages/Onboarding'
+import CRM from '@/pages/CRM'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="orcamentos" element={<Orcamentos />} />
             <Route path="orcamentos/novo" element={<NovoOrcamento />} />
             <Route path="orcamentos/modelos" element={<GerenciarModelos />} />
+            <Route path="crm" element={<CRM />} />
             <Route path="pedidos" element={<Pedidos />} />
             <Route path="financeiro" element={<Financeiro />} />
             <Route path="clientes" element={<Clientes />} />

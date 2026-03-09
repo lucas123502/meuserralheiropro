@@ -1,9 +1,10 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { FileText, Package, DollarSign, Users, Lightbulb, BookOpen, BarChart3, Settings, HelpCircle } from 'lucide-react'
+import { FileText, Package, DollarSign, Users, Lightbulb, BookOpen, BarChart3, Settings, HelpCircle, KanbanSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navigation = [
   { name: 'Orçamentos', href: '/orcamentos', icon: FileText },
+  { name: 'Pipeline CRM', href: '/crm', icon: KanbanSquare },
   { name: 'Pedidos', href: '/pedidos', icon: Package },
   { name: 'Financeiro', href: '/financeiro', icon: DollarSign },
   { name: 'Clientes', href: '/clientes', icon: Users },
