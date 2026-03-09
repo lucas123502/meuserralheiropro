@@ -10,6 +10,13 @@ export interface CompanySettings {
 
   // Logo
   logo?: string // base64 ou URL
+
+  // Campos do PDF
+  brinde?: string
+  garantia?: string
+  tempoEntrega?: string
+  parcelamento?: string
+  fraseFinal?: string
 }
 
 export const defaultSettings: CompanySettings = {
@@ -21,4 +28,9 @@ export const defaultSettings: CompanySettings = {
   city: '',
   state: '',
   logo: undefined,
+  brinde: '',
+  garantia: '1 ano contra defeitos de fabricação',
+  tempoEntrega: '15 a 30 dias úteis após aprovação',
+  parcelamento: 'até 12x no cartão',
+  fraseFinal: 'Obrigado pela preferência! Estamos à disposição para qualquer dúvida.',
 }

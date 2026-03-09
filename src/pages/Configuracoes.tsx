@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Building2, User, Phone, MapPin, Mail, Image, FileDigit } from 'lucide-react'
+import { Building2, User, Phone, MapPin, Mail, Image, FileDigit, FileText, Gift, ShieldCheck, Clock, CreditCard, MessageSquareQuote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { getSettings, saveSettings } from '@/lib/settings'
@@ -19,6 +20,11 @@ const settingsSchema = z.object({
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   city: z.string().min(1, 'Cidade é obrigatória'),
   state: z.string().min(1, 'Estado é obrigatório'),
+  brinde: z.string().optional(),
+  garantia: z.string().optional(),
+  tempoEntrega: z.string().optional(),
+  parcelamento: z.string().optional(),
+  fraseFinal: z.string().optional(),
 })
 
 type SettingsFormData = z.infer<typeof settingsSchema>
@@ -48,6 +54,11 @@ export default function Configuracoes() {
       email: settings.email,
       city: settings.city,
       state: settings.state,
+      brinde: settings.brinde,
+      garantia: settings.garantia,
+      tempoEntrega: settings.tempoEntrega,
+      parcelamento: settings.parcelamento,
+      fraseFinal: settings.fraseFinal,
     })
     setLogo(settings.logo)
   }, [reset])
@@ -293,6 +304,84 @@ export default function Configuracoes() {
                   </Button>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Configurações do PDF de Orçamento */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Informações do PDF de Orçamento
+            </CardTitle>
+            <CardDescription>
+              Esses textos aparecerão automaticamente em todos os orçamentos gerados em PDF
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="brinde" className="flex items-center gap-2">
+                <Gift className="h-4 w-4 text-muted-foreground" />
+                Brinde (opcional)
+              </Label>
+              <Input
+                id="brinde"
+                {...register('brinde')}
+                placeholder="Ex: Kit de manutenção grátis na instalação"
+              />
+              <p className="text-xs text-muted-foreground">
+                Deixe em branco para não exibir essa seção no PDF
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="garantia" className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                Garantia
+              </Label>
+              <Input
+                id="garantia"
+                {...register('garantia')}
+                placeholder="Ex: 1 ano contra defeitos de fabricação"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tempoEntrega" className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Tempo Estimado para Entrega
+              </Label>
+              <Input
+                id="tempoEntrega"
+                {...register('tempoEntrega')}
+                placeholder="Ex: 15 a 30 dias úteis após aprovação"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="parcelamento" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                Parcelamento / Formas de Pagamento
+              </Label>
+              <Input
+                id="parcelamento"
+                {...register('parcelamento')}
+                placeholder="Ex: até 12x no cartão ou à vista com 5% de desconto"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fraseFinal" className="flex items-center gap-2">
+                <MessageSquareQuote className="h-4 w-4 text-muted-foreground" />
+                Frase Final do Orçamento
+              </Label>
+              <Textarea
+                id="fraseFinal"
+                {...register('fraseFinal')}
+                placeholder="Ex: Obrigado pela preferência! Estamos à disposição para qualquer dúvida."
+                rows={2}
+              />
             </div>
           </CardContent>
         </Card>

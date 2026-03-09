@@ -31,7 +31,11 @@ React 18 + TypeScript + Vite + Tailwind + shadcn/ui + jsPDF + React Router v7
 ### Navegação (MainLayout.tsx)
 - Adicionado "Pipeline CRM" com ícone KanbanSquare após Orçamentos
 
-## PDF
-- Gerado por jsPDF, download direto via baixarPDF()
-- Cabeçalho escuro com nome da empresa e linha dourada
-- Layout moderno com seções: cliente, serviço, observações, valor total, aviso
+## PDF (atualizado)
+- Gerado por jsPDF via pdf-generator.ts, download direto via baixarPDF()
+- Dados da empresa vêm de getSettings(): companyName, cnpj, city, state, phone, logo
+- Novos campos em CompanySettings: brinde, garantia, tempoEntrega, parcelamento, fraseFinal
+- Configuráveis em Configuracoes.tsx (nova seção "Informações do PDF de Orçamento")
+- Layout com seções: cabeçalho empresa, título, dados cliente, tipo/dimensões,
+  qualidade (campo observacoes do orçamento), brinde (se preenchido), garantia,
+  tempo entrega, formas de pagamento (à vista 5% desc + parcelamento), valor total destaque, frase final, rodapé
