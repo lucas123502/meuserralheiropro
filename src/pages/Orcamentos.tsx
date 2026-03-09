@@ -7,6 +7,7 @@ import { Plus, FileText, Calendar, DollarSign, Download, CheckCircle, Settings, 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { baixarPDF } from '@/lib/pdf-generator'
+
 import { useToast } from '@/hooks/use-toast'
 import { Pedido } from '@/types/pedido'
 import { salvarClienteAutomatico } from '@/lib/cliente-manager'
@@ -35,44 +36,8 @@ interface Orcamento {
   dataEnvioWhatsApp?: string
 }
 
-function gerarMensagemWhatsApp(orcamento: Orcamento): string {
-  const nomeCliente = orcamento.clienteCompleto?.nome || orcamento.cliente || 'Cliente'
-  const dataFormatada = format(
-    typeof orcamento.data === 'string' ? new Date(orcamento.data) : orcamento.data,
-    "dd/MM/yyyy",
-    { locale: ptBR }
-  )
-  const valorFormatado = (Number.isFinite(orcamento.valor) ? orcamento.valor : 0).toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })
-
-  const largura = parseFloat(orcamento.medidas.largura) || 0
-  const altura = parseFloat(orcamento.medidas.altura) || 0
-  const quantidade = parseInt(orcamento.medidas.quantidade) || 1
-
-  let mensagem = `Olá ${nomeCliente}! 👋\n\n`
-  mensagem += `Segue o orçamento solicitado:\n\n`
-  mensagem += `📋 *ORÇAMENTO Nº ${orcamento.id}*\n`
-  mensagem += `📅 Data: ${dataFormatada}\n\n`
-  mensagem += `🔧 *Serviço:* ${orcamento.tipoServico}\n`
-  mensagem += `📐 *Modelo:* ${orcamento.modelo}\n`
-
-  if (largura > 0 && altura > 0) {
-    mensagem += `📏 *Medidas:* ${largura.toFixed(2)}m (L) × ${altura.toFixed(2)}m (A)`
-    if (quantidade > 1) mensagem += ` × ${quantidade} und`
-    mensagem += `\n`
-  }
-
-  if (orcamento.observacoes) {
-    mensagem += `\n📝 *Observações:* ${orcamento.observacoes}\n`
-  }
-
-  mensagem += `\n💰 *VALOR TOTAL: R$ ${valorFormatado}*\n\n`
-  mensagem += `_Este valor é uma estimativa inicial e pode sofrer alterações após avaliação detalhada no local._\n\n`
-  mensagem += `Qualquer dúvida, estou à disposição! 😊`
-
-  return mensagem
+function gerarMensagemWhatsApp(_orcamento: Orcamento): string {
+  return `Olá, tudo bem?\n\nSegue o orçamento que preparei para você.\n\nSe tiver qualquer dúvida ou quiser ajustar algo é só me avisar.`
 }
 
 export default function Orcamentos() {
