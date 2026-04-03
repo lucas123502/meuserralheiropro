@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { FileText, Package, DollarSign, Users, Lightbulb, BookOpen, BarChart3, Settings, HelpCircle, KanbanSquare } from 'lucide-react'
+import { FileText, Package, DollarSign, Users, Lightbulb, BookOpen, BarChart3, Settings, HelpCircle, KanbanSquare, CreditCard } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAssinatura } from '@/hooks/use-assinatura'
 
 const navigation = [
   { name: 'Orçamentos', href: '/orcamentos', icon: FileText },
@@ -17,6 +18,16 @@ const navigation = [
 
 export default function MainLayout() {
   const location = useLocation()
+  const { status } = useAssinatura()
+
+  const statusBadge =
+    status === 'trial'
+      ? { label: 'Trial', color: 'bg-blue-100 text-blue-700' }
+      : status === 'ativa'
+        ? { label: 'Ativo', color: 'bg-green-100 text-green-700' }
+        : status === 'limitado'
+          ? { label: 'Limitado', color: 'bg-amber-100 text-amber-700' }
+          : null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -24,9 +35,26 @@ export default function MainLayout() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-gray-900">Meu Serralheiro Pro</h1>
+              {statusBadge && (
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusBadge.color}`}>
+                  {statusBadge.label}
+                </span>
+              )}
             </div>
+            <Link
+              to="/assinatura"
+              className={cn(
+                'flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors',
+                location.pathname === '/assinatura'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+              )}
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              Assinatura
+            </Link>
           </div>
         </div>
       </header>
