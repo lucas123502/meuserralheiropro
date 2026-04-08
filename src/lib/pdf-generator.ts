@@ -24,13 +24,15 @@ interface OrcamentoPDF {
 }
 
 // Cores padrão
-const COR_ESCURA = [30, 30, 30] as const       // Quase preto
-const COR_DOURADA = [218, 165, 32] as const    // Dourado
+const COR_ESCURA = [30, 30, 30] as const       // Quase preto (mantido para referências de texto)
+const COR_DOURADA = [180, 130, 20] as const    // Dourado escuro (visível em fundo claro)
 const COR_BRANCA = [255, 255, 255] as const
 const COR_CINZA_CLARO = [245, 245, 245] as const
 const COR_CINZA_TEXTO = [90, 90, 90] as const
 const COR_VERDE_CLARO = [240, 255, 245] as const
 const COR_VERDE_BORDA = [34, 139, 34] as const
+const COR_SECAO_FUNDO = [240, 240, 240] as const   // Cinza claro para títulos de seção
+const COR_SECAO_BORDA = [200, 200, 200] as const   // Borda cinza média
 
 // Helpers
 function setFill(doc: jsPDF, cor: readonly [number, number, number]) {
@@ -44,9 +46,11 @@ function setTextColor(doc: jsPDF, cor: readonly [number, number, number]) {
 }
 
 function drawSectionTitle(doc: jsPDF, label: string, y: number, pageWidth: number) {
-  setFill(doc, COR_ESCURA)
-  doc.rect(15, y, pageWidth - 30, 8, 'F')
-  setTextColor(doc, COR_DOURADA)
+  setFill(doc, COR_SECAO_FUNDO)
+  setDraw(doc, COR_SECAO_BORDA)
+  doc.setLineWidth(0.3)
+  doc.rect(15, y, pageWidth - 30, 8, 'FD')
+  setTextColor(doc, COR_ESCURA)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
   doc.text(label.toUpperCase(), 20, y + 5.5)
@@ -98,7 +102,7 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
   // ============================================================
 
   const cabecalhoAltura = 52
-  setFill(doc, COR_ESCURA)
+  setFill(doc, COR_BRANCA)
   doc.rect(0, 0, pageWidth, cabecalhoAltura, 'F')
 
   // Logo (se existir)
@@ -119,7 +123,7 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
   }
 
   // Nome da empresa
-  setTextColor(doc, COR_BRANCA)
+  setTextColor(doc, COR_ESCURA)
   doc.setFontSize(18)
   doc.setFont('helvetica', 'bold')
   const textoX = 15 + logoWidth
@@ -128,7 +132,7 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
   // Linha de informações abaixo do nome
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
-  setTextColor(doc, [200, 200, 200])
+  setTextColor(doc, COR_CINZA_TEXTO)
 
   const infoParts: string[] = []
   if (cnpj) infoParts.push(`CNPJ: ${cnpj}`)
@@ -392,12 +396,14 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
   // VALOR TOTAL — DESTAQUE PRINCIPAL
   // ============================================================
 
-  setFill(doc, COR_ESCURA)
-  doc.rect(15, y, pageWidth - 30, 22, 'F')
+  setFill(doc, COR_CINZA_CLARO)
+  setDraw(doc, COR_SECAO_BORDA)
+  doc.setLineWidth(0.5)
+  doc.rect(15, y, pageWidth - 30, 22, 'FD')
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
-  setTextColor(doc, COR_BRANCA)
+  setTextColor(doc, COR_ESCURA)
   doc.text('VALOR TOTAL DO ORÇAMENTO:', 20, y + 9)
 
   doc.setFontSize(18)
@@ -406,7 +412,7 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
 
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
-  setTextColor(doc, [180, 180, 180])
+  setTextColor(doc, COR_CINZA_TEXTO)
   doc.text('* Valor sujeito a confirmação após visita técnica', pageWidth / 2, y + 18, { align: 'center' })
 
   setTextColor(doc, [0, 0, 0])
