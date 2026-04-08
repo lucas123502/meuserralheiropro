@@ -405,11 +405,6 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
   setTextColor(doc, COR_DOURADA)
   doc.text(`R$ ${valorFormatado}`, pageWidth - 20, y + 10, { align: 'right' })
 
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'normal')
-  setTextColor(doc, COR_CINZA_TEXTO)
-  doc.text('* Valor sujeito a confirmação após visita técnica', pageWidth / 2, y + 18, { align: 'center' })
-
   setTextColor(doc, [0, 0, 0])
   y += 30
 
