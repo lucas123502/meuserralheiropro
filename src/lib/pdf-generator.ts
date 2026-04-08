@@ -357,9 +357,14 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
     maximumFractionDigits: 2
   })
 
-  // Calcular valor parcelado (valor base + 16%)
+  // Calcular valor parcelado (valor base + 16%) e parcela mensal (÷ 12)
   const valorParcelado = valorSeguro * 1.16
   const valorParceladoFormatado = valorParcelado.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+  const valorParcela = valorParcelado / 12
+  const valorParcelaFormatado = valorParcela.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
@@ -370,27 +375,17 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
   setDraw(doc, [220, 220, 220])
   doc.setLineWidth(0.3)
 
-  const pagBoxH = parcelamento ? 18 : 0
-  if (pagBoxH > 0) {
-    doc.rect(15, y - 2, pageWidth - 30, pagBoxH, 'FD')
-  }
+  const textoParcelado = `Parcelado em 12x de R$ ${valorParcelaFormatado} (total R$ ${valorParceladoFormatado})`
+  const pagBoxH = 14
+  doc.rect(15, y - 2, pageWidth - 30, pagBoxH, 'FD')
 
-  // Parcelado
-  if (parcelamento) {
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    setTextColor(doc, COR_CINZA_TEXTO)
-    doc.text('Parcelado:', 18, y + 4)
-    const parcLines = doc.splitTextToSize(`${parcelamento} (total R$ ${valorParceladoFormatado})`, pageWidth - 70)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8.5)
-    setTextColor(doc, COR_CINZA_TEXTO)
-    doc.text(parcLines, 50, y + 4)
-    y += pagBoxH + 8
-  }
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  setTextColor(doc, COR_CINZA_TEXTO)
+  doc.text(textoParcelado, 18, y + 6)
 
   setTextColor(doc, [0, 0, 0])
-  y += 4
+  y += pagBoxH + 8
 
   // ============================================================
   // VALOR TOTAL — DESTAQUE PRINCIPAL
