@@ -353,53 +353,40 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
     maximumFractionDigits: 2
   })
 
+  // Calcular valor parcelado (valor base + 16%)
+  const valorParcelado = valorSeguro * 1.16
+  const valorParceladoFormatado = valorParcelado.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+
   y = drawSectionTitle(doc, 'Formas de Pagamento', y, pageWidth)
 
   setFill(doc, COR_BRANCA)
   setDraw(doc, [220, 220, 220])
   doc.setLineWidth(0.3)
 
-  // Calcular desconto à vista (5%)
-  const valorAVista = valorSeguro * 0.95
-  const valorAVistaFormatado = valorAVista.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })
+  const pagBoxH = parcelamento ? 18 : 0
+  if (pagBoxH > 0) {
+    doc.rect(15, y - 2, pageWidth - 30, pagBoxH, 'FD')
+  }
 
-  const pagBoxH = parcelamento ? 28 : 20
-  doc.rect(15, y - 2, pageWidth - 30, pagBoxH, 'FD')
-
-  // Valor à vista
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  setTextColor(doc, COR_CINZA_TEXTO)
-  doc.text('À Vista:', 18, y + 4)
-  doc.setFont('helvetica', 'bold')
-  setTextColor(doc, [0, 120, 0])
-  doc.text(`R$ ${valorAVistaFormatado}`, 45, y + 4)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8)
-  setTextColor(doc, COR_CINZA_TEXTO)
-  doc.text('(5% de desconto)', 45 + doc.getTextWidth(`R$ ${valorAVistaFormatado}`) + 2, y + 4)
-
-  // Total
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  setTextColor(doc, COR_CINZA_TEXTO)
-  doc.text('Total:', 18, y + 12)
-  setTextColor(doc, [0, 0, 0])
-  doc.text(`R$ ${valorFormatado}`, 45, y + 12)
-
+  // Parcelado
   if (parcelamento) {
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    setTextColor(doc, COR_CINZA_TEXTO)
+    doc.text('Parcelado:', 18, y + 4)
+    const parcLines = doc.splitTextToSize(`${parcelamento} (total R$ ${valorParceladoFormatado})`, pageWidth - 70)
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8.5)
     setTextColor(doc, COR_CINZA_TEXTO)
-    const parcLines = doc.splitTextToSize(parcelamento, pageWidth - 40)
-    doc.text(parcLines, 18, y + 20)
+    doc.text(parcLines, 50, y + 4)
+    y += pagBoxH + 8
   }
 
   setTextColor(doc, [0, 0, 0])
-  y += pagBoxH + 12
+  y += 4
 
   // ============================================================
   // VALOR TOTAL — DESTAQUE PRINCIPAL
