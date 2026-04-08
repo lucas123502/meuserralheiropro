@@ -375,14 +375,14 @@ export function gerarPDFOrcamento(orcamento: OrcamentoPDF) {
   setDraw(doc, [220, 220, 220])
   doc.setLineWidth(0.3)
 
-  const textoParcelado = `Parcelado em 12x de R$ ${valorParcelaFormatado} (total R$ ${valorParceladoFormatado})`
-  const pagBoxH = 14
+  const pagBoxH = 22
   doc.rect(15, y - 2, pageWidth - 30, pagBoxH, 'FD')
 
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
   setTextColor(doc, COR_CINZA_TEXTO)
-  doc.text(textoParcelado, 18, y + 6)
+  doc.text(`Parcelado em 12x de R$ ${valorParcelaFormatado} (total R$ ${valorParceladoFormatado})`, 18, y + 6)
+  doc.text(`Valor à vista: R$ ${valorFormatado}`, 18, y + 14)
 
   setTextColor(doc, [0, 0, 0])
   y += pagBoxH + 8
