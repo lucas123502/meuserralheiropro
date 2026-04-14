@@ -211,17 +211,17 @@ export default function Financeiro() {
   }, [pedidos])
 
   // Calcular intervalo do filtro
-  const intervaloFiltro = useMemo((): { inicio: Date; fim: Date } | null => {
+  const intervaloFiltro = useMemo((): { start: Date; end: Date } | null => {
     const hoje = new Date()
     switch (filtroSelecionado) {
-      case 'mes_atual':    return { inicio: startOfMonth(hoje), fim: endOfMonth(hoje) }
-      case 'ultimos_30':   return { inicio: subDays(hoje, 30), fim: hoje }
-      case 'ultimos_3m':   return { inicio: subMonths(hoje, 3), fim: hoje }
-      case 'ultimos_6m':   return { inicio: subMonths(hoje, 6), fim: hoje }
-      case 'este_ano':     return { inicio: startOfYear(hoje), fim: hoje }
+      case 'mes_atual':    return { start: startOfMonth(hoje), end: endOfMonth(hoje) }
+      case 'ultimos_30':   return { start: subDays(hoje, 30), end: hoje }
+      case 'ultimos_3m':   return { start: subMonths(hoje, 3), end: hoje }
+      case 'ultimos_6m':   return { start: subMonths(hoje, 6), end: hoje }
+      case 'este_ano':     return { start: startOfYear(hoje), end: hoje }
       case 'personalizado':
         if (dataInicioPers && dataFimPers)
-          return { inicio: new Date(dataInicioPers + 'T00:00:00'), fim: new Date(dataFimPers + 'T23:59:59') }
+          return { start: new Date(dataInicioPers + 'T00:00:00'), end: new Date(dataFimPers + 'T23:59:59') }
         return null
       default: return null
     }
