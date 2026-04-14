@@ -3,19 +3,48 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { DollarSign, TrendingUp, Package, Calendar, User, FileText, Info } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DollarSign, TrendingUp, Package, Calendar, User, FileText, Info, Plus, CheckCircle, Clock } from 'lucide-react'
 import { format, startOfMonth, endOfMonth, subDays, isWithinInterval } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Pedido } from '@/types/pedido'
 
 type FiltroPeriodo = 'mes_atual' | 'ultimos_30' | 'total'
 
+interface ContaReceber {
+  id: string
+  nome: string
+  valor: number
+  vencimento: string
+  categoria: string
+  status: 'pendente' | 'recebido'
+  criadoEm: string
+}
+
+const CATEGORIAS = ['Venda', 'Serviço', 'Aluguel', 'Comissão', 'Outro']
+
+const CONTA_RECEBER_VAZIA: Omit<ContaReceber, 'id' | 'criadoEm' | 'status'> = {
+  nome: '',
+  valor: 0,
+  vencimento: '',
+  categoria: '',
+}
+
 export default function Financeiro() {
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [filtroSelecionado, setFiltroSelecionado] = useState<FiltroPeriodo>('mes_atual')
 
+  // Contas a Receber
+  const [contasReceber, setContasReceber] = useState<ContaReceber[]>([])
+  const [modalAberto, setModalAberto] = useState(false)
+  const [novaConta, setNovaConta] = useState(CONTA_RECEBER_VAZIA)
+
   useEffect(() => {
     carregarPedidos()
+    carregarContasReceber()
   }, [])
 
   const carregarPedidos = () => {
@@ -24,6 +53,46 @@ export default function Financeiro() {
       setPedidos(JSON.parse(saved))
     }
   }
+
+  const carregarContasReceber = () => {
+    const saved = localStorage.getItem('contasReceber')
+    if (saved) {
+      setContasReceber(JSON.parse(saved))
+    }
+  }
+
+  const salvarContasReceber = (contas: ContaReceber[]) => {
+    localStorage.setItem('contasReceber', JSON.stringify(contas))
+    setContasReceber(contas)
+  }
+
+  const adicionarConta = () => {
+    if (!novaConta.nome || !novaConta.valor || !novaConta.vencimento || !novaConta.categoria) return
+    const conta: ContaReceber = {
+      ...novaConta,
+      id: Date.now().toString(),
+      status: 'pendente',
+      criadoEm: new Date().toISOString(),
+    }
+    salvarContasReceber([...contasReceber, conta])
+    setNovaConta(CONTA_RECEBER_VAZIA)
+    setModalAberto(false)
+  }
+
+  const marcarComoRecebido = (id: string) => {
+    const atualizadas = contasReceber.map(c =>
+      c.id === id ? { ...c, status: 'recebido' as const } : c
+    )
+    salvarContasReceber(atualizadas)
+  }
+
+  const totalAReceber = contasReceber
+    .filter(c => c.status === 'pendente')
+    .reduce((acc, c) => acc + c.valor, 0)
+
+  const totalRecebido = contasReceber
+    .filter(c => c.status === 'recebido')
+    .reduce((acc, c) => acc + c.valor, 0)
 
   // Filtrar apenas pedidos finalizados
   const pedidosFinalizados = useMemo(() => {
@@ -233,6 +302,195 @@ export default function Financeiro() {
           )}
         </CardContent>
       </Card>
+
+      {/* ─────────────── CONTAS A RECEBER ─────────────── */}
+      <div className="mt-10">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Contas a Receber</h2>
+            <p className="text-gray-600 text-sm mt-1">Gerencie os valores que você tem a receber</p>
+          </div>
+          <Button onClick={() => setModalAberto(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Conta
+          </Button>
+        </div>
+
+        {/* Resumo Contas a Receber */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card className="border-2 border-yellow-200 bg-yellow-50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">Total a Receber</CardTitle>
+              <div className="h-9 w-9 bg-yellow-200 rounded-lg flex items-center justify-center">
+                <Clock className="h-5 w-5 text-yellow-700" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-700">
+                R$ {totalAReceber.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {contasReceber.filter(c => c.status === 'pendente').length} conta(s) pendente(s)
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-green-200 bg-green-50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">Total Recebido</CardTitle>
+              <div className="h-9 w-9 bg-green-200 rounded-lg flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 text-green-700" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-700">
+                R$ {totalRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {contasReceber.filter(c => c.status === 'recebido').length} conta(s) recebida(s)
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lista de Contas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <DollarSign className="h-5 w-5" />
+              Lista de Contas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {contasReceber.length === 0 ? (
+              <div className="text-center py-10">
+                <div className="flex justify-center mb-3">
+                  <div className="h-14 w-14 bg-gray-100 rounded-full flex items-center justify-center">
+                    <DollarSign className="h-7 w-7 text-gray-400" />
+                  </div>
+                </div>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">Nenhuma conta cadastrada</h3>
+                <p className="text-gray-500 text-sm">Clique em "+ Nova Conta" para adicionar.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {contasReceber.map((conta) => (
+                  <div
+                    key={conta.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-gray-900">{conta.nome}</span>
+                        <Badge
+                          className={
+                            conta.status === 'recebido'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }
+                        >
+                          {conta.status === 'recebido' ? 'Recebido' : 'Pendente'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">{conta.categoria}</Badge>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          Vence em {format(new Date(conta.vencimento + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-gray-900">
+                          R$ {conta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                      {conta.status === 'pendente' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-green-700 border-green-300 hover:bg-green-50"
+                          onClick={() => marcarComoRecebido(conta.id)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Marcar como recebido
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Modal Nova Conta */}
+      <Dialog open={modalAberto} onOpenChange={setModalAberto}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Conta a Receber</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="cr-nome">Nome</Label>
+              <Input
+                id="cr-nome"
+                placeholder="Ex: Pagamento cliente João"
+                value={novaConta.nome}
+                onChange={e => setNovaConta(p => ({ ...p, nome: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cr-valor">Valor (R$)</Label>
+              <Input
+                id="cr-valor"
+                type="number"
+                min={0}
+                step={0.01}
+                placeholder="0,00"
+                value={novaConta.valor || ''}
+                onChange={e => setNovaConta(p => ({ ...p, valor: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cr-vencimento">Data de Vencimento</Label>
+              <Input
+                id="cr-vencimento"
+                type="date"
+                value={novaConta.vencimento}
+                onChange={e => setNovaConta(p => ({ ...p, vencimento: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Categoria</Label>
+              <Select
+                value={novaConta.categoria}
+                onValueChange={v => setNovaConta(p => ({ ...p, categoria: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIAS.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalAberto(false)}>Cancelar</Button>
+            <Button
+              onClick={adicionarConta}
+              disabled={!novaConta.nome || !novaConta.valor || !novaConta.vencimento || !novaConta.categoria}
+            >
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
