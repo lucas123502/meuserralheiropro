@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { FileText, CheckCircle, XCircle, Package, CircleCheck, DollarSign } from 'lucide-react'
+import { FileText, CheckCircle, XCircle, Package, CircleCheck, DollarSign, TrendingUp, TrendingDown, Percent } from 'lucide-react'
 import { Pedido, StatusPedido, STATUS_LABELS } from '@/types/pedido'
 
 interface Orcamento {
@@ -24,6 +24,10 @@ export default function Relatorios() {
     carregarDados()
   }, [])
 
+  // Dados financeiros (contas a receber / a pagar)
+  const [receitaReal, setReceitaReal] = useState(0)
+  const [despesaTotal, setDespesaTotal] = useState(0)
+
   const carregarDados = () => {
     // Carregar orçamentos
     const savedOrcamentos = localStorage.getItem('orcamentos')
@@ -36,6 +40,25 @@ export default function Relatorios() {
     const savedPedidos = localStorage.getItem('pedidos')
     if (savedPedidos) {
       setPedidos(JSON.parse(savedPedidos))
+    }
+
+    // Carregar dados financeiros do módulo Financeiro
+    const savedContasReceber = localStorage.getItem('contasReceber')
+    if (savedContasReceber) {
+      const contas = JSON.parse(savedContasReceber)
+      const total = contas
+        .filter((c: { status: string }) => c.status === 'recebido')
+        .reduce((acc: number, c: { valor: number }) => acc + c.valor, 0)
+      setReceitaReal(total)
+    }
+
+    const savedContasPagar = localStorage.getItem('contasPagar')
+    if (savedContasPagar) {
+      const contas = JSON.parse(savedContasPagar)
+      const total = contas
+        .filter((c: { status: string }) => c.status === 'pago')
+        .reduce((acc: number, c: { valor: number }) => acc + c.valor, 0)
+      setDespesaTotal(total)
     }
   }
 
@@ -101,6 +124,13 @@ export default function Relatorios() {
   pedidosFiltrados.forEach((pedido) => {
     pedidosPorStatus[pedido.status]++
   })
+
+  // Métricas financeiras reais
+  const lucroLiquidoReal = receitaReal - despesaTotal
+  const margemLucro = receitaReal > 0 ? (lucroLiquidoReal / receitaReal) * 100 : 0
+
+  const formatBRL = (v: number) =>
+    v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -212,6 +242,68 @@ export default function Relatorios() {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* ── Visão Financeira Real ── */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-gray-900 mb-1">Visão Financeira Real</h2>
+        <p className="text-gray-500 text-sm mb-4">Baseado nas Contas a Receber e Contas a Pagar do módulo Financeiro</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Receita Real */}
+          <Card className="border-2 border-green-200 bg-green-50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Receita Real</CardTitle>
+              <DollarSign className="h-5 w-5 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-700">R$ {formatBRL(receitaReal)}</div>
+              <p className="text-xs text-gray-500 mt-1">Contas marcadas como recebido</p>
+            </CardContent>
+          </Card>
+
+          {/* Despesa Total */}
+          <Card className="border-2 border-red-200 bg-red-50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Despesa Total</CardTitle>
+              <TrendingDown className="h-5 w-5 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-700">R$ {formatBRL(despesaTotal)}</div>
+              <p className="text-xs text-gray-500 mt-1">Contas marcadas como pago</p>
+            </CardContent>
+          </Card>
+
+          {/* Lucro Líquido */}
+          <Card className={`border-2 ${lucroLiquidoReal >= 0 ? 'border-blue-200 bg-blue-50' : 'border-orange-200 bg-orange-50'}`}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Lucro Líquido</CardTitle>
+              <TrendingUp className={`h-5 w-5 ${lucroLiquidoReal >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${lucroLiquidoReal >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+                {lucroLiquidoReal < 0 ? '-' : ''}R$ {formatBRL(Math.abs(lucroLiquidoReal))}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Receita Real − Despesa Total</p>
+            </CardContent>
+          </Card>
+
+          {/* Margem de Lucro */}
+          <Card className={`border-2 ${margemLucro >= 0 ? 'border-purple-200 bg-purple-50' : 'border-gray-200'}`}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Margem de Lucro</CardTitle>
+              <Percent className={`h-5 w-5 ${margemLucro >= 0 ? 'text-purple-600' : 'text-gray-400'}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${margemLucro > 0 ? 'text-purple-700' : margemLucro < 0 ? 'text-red-700' : 'text-gray-500'}`}>
+                {margemLucro.toFixed(1)}%
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {receitaReal === 0 ? 'Sem receita registrada' : '(Lucro ÷ Receita) × 100'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
