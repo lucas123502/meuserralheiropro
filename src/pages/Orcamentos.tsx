@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, FileText, Calendar, DollarSign, Download, CheckCircle, Settings, MessageCircle } from 'lucide-react'
+import { Plus, FileText, Calendar, DollarSign, Download, CheckCircle, Settings, MessageCircle, Bell } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { baixarPDF } from '@/lib/pdf-generator'
@@ -140,6 +140,24 @@ export default function Orcamentos() {
     })
   }
 
+  // Verifica se o orçamento precisa de follow-up:
+  // enviado há mais de 2 dias, não convertido em pedido
+  const precisaFollowUp = (orcamento: Orcamento): boolean => {
+    if (orcamento.convertidoEmPedido) return false
+    if (orcamento.status !== 'enviado') return false
+
+    const dataRef = orcamento.dataEnvioWhatsApp
+      ? new Date(orcamento.dataEnvioWhatsApp)
+      : typeof orcamento.data === 'string'
+        ? new Date(orcamento.data)
+        : orcamento.data
+
+    const diasPassados = (Date.now() - dataRef.getTime()) / (1000 * 60 * 60 * 24)
+    return diasPassados >= 2
+  }
+
+  const paraAcompanhar = orcamentos.filter(precisaFollowUp)
+
   if (orcamentos.length === 0) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -206,6 +224,59 @@ export default function Orcamentos() {
         </div>
       </div>
 
+      {/* ── Orçamentos para acompanhar ── */}
+      {paraAcompanhar.length > 0 && (
+        <div className="mb-8 p-4 border-2 border-orange-200 bg-orange-50 rounded-xl">
+          <div className="flex items-center gap-2 mb-4">
+            <Bell className="h-5 w-5 text-orange-600" />
+            <h2 className="text-lg font-bold text-orange-800">
+              Orçamentos para acompanhar ({paraAcompanhar.length})
+            </h2>
+          </div>
+          <p className="text-sm text-orange-700 mb-4">
+            Estes orçamentos foram enviados há mais de 2 dias e ainda não viraram pedido. Hora de entrar em contato!
+          </p>
+          <div className="space-y-2">
+            {paraAcompanhar.map((orcamento) => {
+              const dataRef = orcamento.dataEnvioWhatsApp
+                ? new Date(orcamento.dataEnvioWhatsApp)
+                : typeof orcamento.data === 'string' ? new Date(orcamento.data) : orcamento.data
+              const dias = Math.floor((Date.now() - dataRef.getTime()) / (1000 * 60 * 60 * 24))
+              return (
+                <div
+                  key={orcamento.id}
+                  className="flex items-center justify-between bg-white border border-orange-200 rounded-lg px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <Bell className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                    <div>
+                      <span className="font-semibold text-gray-900">{orcamento.cliente || 'Cliente sem nome'}</span>
+                      <span className="text-sm text-gray-500 ml-2">{orcamento.tipoServico} - {orcamento.modelo}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-orange-700 font-medium">
+                      {dias === 1 ? '1 dia' : `${dias} dias`} sem resposta
+                    </span>
+                    {orcamento.clienteCompleto?.telefone && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-green-700 border-green-300 hover:bg-green-50"
+                        onClick={() => enviarWhatsApp(orcamento)}
+                      >
+                        <MessageCircle className="h-3.5 w-3.5 mr-1" />
+                        Contatar
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         {orcamentos.map((orcamento) => (
           <Card key={orcamento.id} className="hover:shadow-md transition-shadow">
@@ -224,6 +295,12 @@ export default function Orcamentos() {
                         <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
                           <MessageCircle className="h-3 w-3 mr-1" />
                           WhatsApp enviado
+                        </Badge>
+                      )}
+                      {precisaFollowUp(orcamento) && (
+                        <Badge className="bg-orange-100 text-orange-800 border border-orange-300 animate-pulse">
+                          <Bell className="h-3 w-3 mr-1" />
+                          Fazer contato
                         </Badge>
                       )}
                     </div>
