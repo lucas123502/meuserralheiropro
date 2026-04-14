@@ -159,6 +159,9 @@ export default function Financeiro() {
     .filter(c => c.status === 'pago')
     .reduce((acc, c) => acc + c.valor, 0)
 
+  // Lucro Líquido = Total Recebido - Total Pago
+  const lucroLiquido = totalRecebido - totalPago
+
   // Filtrar apenas pedidos finalizados
   const pedidosFinalizados = useMemo(() => {
     return pedidos.filter(p => p.status === 'finalizado')
@@ -247,7 +250,7 @@ export default function Financeiro() {
       </div>
 
       {/* Cards de métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Faturamento Total */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -289,6 +292,42 @@ export default function Financeiro() {
               {filtroSelecionado === 'mes_atual' && 'neste mês'}
               {filtroSelecionado === 'ultimos_30' && 'nos últimos 30 dias'}
               {filtroSelecionado === 'total' && 'no total'}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Lucro Líquido */}
+        <Card className={
+          lucroLiquido > 0
+            ? 'border-2 border-green-300 bg-green-50'
+            : lucroLiquido < 0
+              ? 'border-2 border-red-300 bg-red-50'
+              : 'border-2 border-gray-200'
+        }>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Lucro Líquido
+            </CardTitle>
+            <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+              lucroLiquido > 0 ? 'bg-green-200' : lucroLiquido < 0 ? 'bg-red-200' : 'bg-gray-100'
+            }`}>
+              <TrendingUp className={`h-6 w-6 ${
+                lucroLiquido > 0 ? 'text-green-700' : lucroLiquido < 0 ? 'text-red-700' : 'text-gray-500'
+              }`} />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-3xl font-bold ${
+              lucroLiquido > 0 ? 'text-green-700' : lucroLiquido < 0 ? 'text-red-700' : 'text-gray-500'
+            }`}>
+              {lucroLiquido < 0 ? '-' : ''}R$ {Math.abs(lucroLiquido).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {lucroLiquido > 0 ? 'Resultado positivo' : lucroLiquido < 0 ? 'Resultado negativo' : 'Resultado neutro'}
+              {' · '}Recebido − Pago
             </p>
           </CardContent>
         </Card>
