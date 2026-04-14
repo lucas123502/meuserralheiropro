@@ -24,7 +24,28 @@ interface ContaReceber {
   criadoEm: string
 }
 
-const CATEGORIAS = ['Venda', 'Serviço', 'Aluguel', 'Comissão', 'Outro']
+const CATEGORIAS_RECEBER = ['Serviço', 'Produto', 'Outros']
+
+/** @deprecated mantido para compatibilidade com dados já salvos */
+const CATEGORIAS = ['Venda', 'Serviço', 'Aluguel', 'Comissão', 'Outro', ...CATEGORIAS_RECEBER]
+
+const COR_CATEGORIA_RECEBER: Record<string, string> = {
+  Serviço:   'bg-blue-100 text-blue-800',
+  Produto:   'bg-purple-100 text-purple-800',
+  Outros:    'bg-gray-100 text-gray-700',
+  // legado
+  Venda:     'bg-green-100 text-green-800',
+  Aluguel:   'bg-yellow-100 text-yellow-800',
+  Comissão:  'bg-pink-100 text-pink-800',
+  Outro:     'bg-gray-100 text-gray-700',
+}
+
+const COR_CATEGORIA_PAGAR: Record<string, string> = {
+  Material:     'bg-orange-100 text-orange-800',
+  Funcionário:  'bg-indigo-100 text-indigo-800',
+  Aluguel:      'bg-yellow-100 text-yellow-800',
+  Outros:       'bg-gray-100 text-gray-700',
+}
 
 const CONTA_RECEBER_VAZIA: Omit<ContaReceber, 'id' | 'criadoEm' | 'status'> = {
   nome: '',
@@ -60,11 +81,13 @@ export default function Financeiro() {
   const [contasReceber, setContasReceber] = useState<ContaReceber[]>([])
   const [modalAberto, setModalAberto] = useState(false)
   const [novaConta, setNovaConta] = useState(CONTA_RECEBER_VAZIA)
+  const [filtroCatReceber, setFiltroCatReceber] = useState('Todas')
 
   // Contas a Pagar
   const [contasPagar, setContasPagar] = useState<ContaPagar[]>([])
   const [modalPagarAberto, setModalPagarAberto] = useState(false)
   const [novaDespesa, setNovaDespesa] = useState(CONTA_PAGAR_VAZIA)
+  const [filtroCatPagar, setFiltroCatPagar] = useState('Todas')
 
   useEffect(() => {
     carregarPedidos()
@@ -161,6 +184,15 @@ export default function Financeiro() {
 
   // Lucro Líquido = Total Recebido - Total Pago
   const lucroLiquido = totalRecebido - totalPago
+
+  // Listas filtradas por categoria
+  const contasReceberFiltradas = filtroCatReceber === 'Todas'
+    ? contasReceber
+    : contasReceber.filter(c => c.categoria === filtroCatReceber)
+
+  const contasPagarFiltradas = filtroCatPagar === 'Todas'
+    ? contasPagar
+    : contasPagar.filter(c => c.categoria === filtroCatPagar)
 
   // Filtrar apenas pedidos finalizados
   const pedidosFinalizados = useMemo(() => {
@@ -460,25 +492,45 @@ export default function Financeiro() {
         {/* Lista de Contas */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <DollarSign className="h-5 w-5" />
-              Lista de Contas
-            </CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <DollarSign className="h-5 w-5" />
+                Lista de Contas
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Filtrar:</span>
+                <Select value={filtroCatReceber} onValueChange={setFiltroCatReceber}>
+                  <SelectTrigger className="w-40 h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todas">Todas</SelectItem>
+                    {CATEGORIAS_RECEBER.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {contasReceber.length === 0 ? (
+            {contasReceberFiltradas.length === 0 ? (
               <div className="text-center py-10">
                 <div className="flex justify-center mb-3">
                   <div className="h-14 w-14 bg-gray-100 rounded-full flex items-center justify-center">
                     <DollarSign className="h-7 w-7 text-gray-400" />
                   </div>
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1">Nenhuma conta cadastrada</h3>
-                <p className="text-gray-500 text-sm">Clique em "+ Nova Conta" para adicionar.</p>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">
+                  {filtroCatReceber === 'Todas' ? 'Nenhuma conta cadastrada' : `Nenhuma conta na categoria "${filtroCatReceber}"`}
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  {filtroCatReceber === 'Todas' ? 'Clique em "+ Nova Conta" para adicionar.' : 'Tente selecionar outra categoria.'}
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {contasReceber.map((conta) => (
+                {contasReceberFiltradas.map((conta) => (
                   <div
                     key={conta.id}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
@@ -495,7 +547,9 @@ export default function Financeiro() {
                         >
                           {conta.status === 'recebido' ? 'Recebido' : 'Pendente'}
                         </Badge>
-                        <Badge variant="outline" className="text-xs">{conta.categoria}</Badge>
+                        <Badge className={`text-xs ${COR_CATEGORIA_RECEBER[conta.categoria] ?? 'bg-gray-100 text-gray-700'}`}>
+                          {conta.categoria}
+                        </Badge>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
@@ -577,7 +631,7 @@ export default function Financeiro() {
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIAS.map(cat => (
+                  {CATEGORIAS_RECEBER.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
                 </SelectContent>
@@ -653,25 +707,45 @@ export default function Financeiro() {
         {/* Lista de Despesas */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              Lista de Despesas
-            </CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <AlertCircle className="h-5 w-5 text-red-500" />
+                Lista de Despesas
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Filtrar:</span>
+                <Select value={filtroCatPagar} onValueChange={setFiltroCatPagar}>
+                  <SelectTrigger className="w-40 h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todas">Todas</SelectItem>
+                    {CATEGORIAS_PAGAR.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {contasPagar.length === 0 ? (
+            {contasPagarFiltradas.length === 0 ? (
               <div className="text-center py-10">
                 <div className="flex justify-center mb-3">
                   <div className="h-14 w-14 bg-gray-100 rounded-full flex items-center justify-center">
                     <AlertCircle className="h-7 w-7 text-gray-400" />
                   </div>
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1">Nenhuma despesa cadastrada</h3>
-                <p className="text-gray-500 text-sm">Clique em "+ Nova Despesa" para adicionar.</p>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">
+                  {filtroCatPagar === 'Todas' ? 'Nenhuma despesa cadastrada' : `Nenhuma despesa na categoria "${filtroCatPagar}"`}
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  {filtroCatPagar === 'Todas' ? 'Clique em "+ Nova Despesa" para adicionar.' : 'Tente selecionar outra categoria.'}
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {contasPagar.map((conta) => (
+                {contasPagarFiltradas.map((conta) => (
                   <div
                     key={conta.id}
                     className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
@@ -692,7 +766,9 @@ export default function Financeiro() {
                         >
                           {conta.status === 'pago' ? 'Pago' : 'Pendente'}
                         </Badge>
-                        <Badge variant="outline" className="text-xs">{conta.categoria}</Badge>
+                        <Badge className={`text-xs ${COR_CATEGORIA_PAGAR[conta.categoria] ?? 'bg-gray-100 text-gray-700'}`}>
+                          {conta.categoria}
+                        </Badge>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
