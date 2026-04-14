@@ -8,11 +8,20 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { DollarSign, TrendingUp, Package, Calendar, User, FileText, Info, Plus, CheckCircle, Clock, AlertCircle } from 'lucide-react'
-import { format, startOfMonth, endOfMonth, subDays, isWithinInterval } from 'date-fns'
+import { format, startOfMonth, endOfMonth, startOfYear, subDays, subMonths, isWithinInterval } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Pedido } from '@/types/pedido'
 
-type FiltroPeriodo = 'mes_atual' | 'ultimos_30' | 'total'
+type FiltroPeriodo = 'mes_atual' | 'ultimos_30' | 'ultimos_3m' | 'ultimos_6m' | 'este_ano' | 'personalizado'
+
+const OPCOES_PERIODO: { value: FiltroPeriodo; label: string }[] = [
+  { value: 'mes_atual',    label: 'Mês atual' },
+  { value: 'ultimos_30',   label: 'Últimos 30 dias' },
+  { value: 'ultimos_3m',   label: 'Últimos 3 meses' },
+  { value: 'ultimos_6m',   label: 'Últimos 6 meses' },
+  { value: 'este_ano',     label: 'Este ano' },
+  { value: 'personalizado', label: 'Período personalizado' },
+]
 
 interface ContaReceber {
   id: string
@@ -76,6 +85,8 @@ const CONTA_PAGAR_VAZIA: Omit<ContaPagar, 'id' | 'criadoEm' | 'status'> = {
 export default function Financeiro() {
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [filtroSelecionado, setFiltroSelecionado] = useState<FiltroPeriodo>('mes_atual')
+  const [dataInicioPers, setDataInicioPers] = useState('')
+  const [dataFimPers, setDataFimPers] = useState('')
 
   // Contas a Receber
   const [contasReceber, setContasReceber] = useState<ContaReceber[]>([])
@@ -199,29 +210,30 @@ export default function Financeiro() {
     return pedidos.filter(p => p.status === 'finalizado')
   }, [pedidos])
 
+  // Calcular intervalo do filtro
+  const intervaloFiltro = useMemo((): { inicio: Date; fim: Date } | null => {
+    const hoje = new Date()
+    switch (filtroSelecionado) {
+      case 'mes_atual':    return { inicio: startOfMonth(hoje), fim: endOfMonth(hoje) }
+      case 'ultimos_30':   return { inicio: subDays(hoje, 30), fim: hoje }
+      case 'ultimos_3m':   return { inicio: subMonths(hoje, 3), fim: hoje }
+      case 'ultimos_6m':   return { inicio: subMonths(hoje, 6), fim: hoje }
+      case 'este_ano':     return { inicio: startOfYear(hoje), fim: hoje }
+      case 'personalizado':
+        if (dataInicioPers && dataFimPers)
+          return { inicio: new Date(dataInicioPers + 'T00:00:00'), fim: new Date(dataFimPers + 'T23:59:59') }
+        return null
+      default: return null
+    }
+  }, [filtroSelecionado, dataInicioPers, dataFimPers])
+
   // Aplicar filtro de período
   const pedidosFiltrados = useMemo(() => {
-    const hoje = new Date()
-
-    switch (filtroSelecionado) {
-      case 'mes_atual': {
-        const inicio = startOfMonth(hoje)
-        const fim = endOfMonth(hoje)
-        return pedidosFinalizados.filter(p =>
-          isWithinInterval(new Date(p.atualizadoEm), { start: inicio, end: fim })
-        )
-      }
-      case 'ultimos_30': {
-        const inicio = subDays(hoje, 30)
-        return pedidosFinalizados.filter(p =>
-          isWithinInterval(new Date(p.atualizadoEm), { start: inicio, end: hoje })
-        )
-      }
-      case 'total':
-      default:
-        return pedidosFinalizados
-    }
-  }, [pedidosFinalizados, filtroSelecionado])
+    if (!intervaloFiltro) return pedidosFinalizados
+    return pedidosFinalizados.filter(p =>
+      isWithinInterval(new Date(p.atualizadoEm), intervaloFiltro)
+    )
+  }, [pedidosFinalizados, intervaloFiltro])
 
   // Calcular métricas
   const faturamentoTotal = useMemo(() => {
@@ -230,16 +242,8 @@ export default function Financeiro() {
 
   const quantidadePedidos = pedidosFiltrados.length
 
-  const getLabelPeriodo = () => {
-    switch (filtroSelecionado) {
-      case 'mes_atual':
-        return 'Este Mês'
-      case 'ultimos_30':
-        return 'Últimos 30 Dias'
-      case 'total':
-        return 'Total Geral'
-    }
-  }
+  const getLabelPeriodo = () =>
+    OPCOES_PERIODO.find(o => o.value === filtroSelecionado)?.label ?? filtroSelecionado
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -256,29 +260,46 @@ export default function Financeiro() {
         </AlertDescription>
       </Alert>
 
-      {/* Filtros de período */}
-      <div className="flex gap-2 mb-6">
-        <Button
-          variant={filtroSelecionado === 'mes_atual' ? 'default' : 'outline'}
-          onClick={() => setFiltroSelecionado('mes_atual')}
-          size="sm"
-        >
-          Mês Atual
-        </Button>
-        <Button
-          variant={filtroSelecionado === 'ultimos_30' ? 'default' : 'outline'}
-          onClick={() => setFiltroSelecionado('ultimos_30')}
-          size="sm"
-        >
-          Últimos 30 Dias
-        </Button>
-        <Button
-          variant={filtroSelecionado === 'total' ? 'default' : 'outline'}
-          onClick={() => setFiltroSelecionado('total')}
-          size="sm"
-        >
-          Total Geral
-        </Button>
+      {/* Filtro de período */}
+      <div className="flex flex-wrap items-end gap-3 mb-6">
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-gray-500">Período</Label>
+          <Select
+            value={filtroSelecionado}
+            onValueChange={(v) => setFiltroSelecionado(v as FiltroPeriodo)}
+          >
+            <SelectTrigger className="w-52">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {OPCOES_PERIODO.map(op => (
+                <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {filtroSelecionado === 'personalizado' && (
+          <>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-gray-500">Data inicial</Label>
+              <Input
+                type="date"
+                className="w-40"
+                value={dataInicioPers}
+                onChange={e => setDataInicioPers(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-gray-500">Data final</Label>
+              <Input
+                type="date"
+                className="w-40"
+                value={dataFimPers}
+                onChange={e => setDataFimPers(e.target.value)}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Cards de métricas */}
@@ -321,9 +342,7 @@ export default function Financeiro() {
               {quantidadePedidos}
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {filtroSelecionado === 'mes_atual' && 'neste mês'}
-              {filtroSelecionado === 'ultimos_30' && 'nos últimos 30 dias'}
-              {filtroSelecionado === 'total' && 'no total'}
+              {getLabelPeriodo().toLowerCase()}
             </p>
           </CardContent>
         </Card>

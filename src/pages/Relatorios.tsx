@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FileText, CheckCircle, XCircle, Package, CircleCheck, DollarSign, TrendingUp, TrendingDown, Percent } from 'lucide-react'
+import { startOfMonth, endOfMonth, startOfYear, subDays, subMonths, isWithinInterval } from 'date-fns'
 import { Pedido, StatusPedido, STATUS_LABELS } from '@/types/pedido'
 
 interface Orcamento {
@@ -13,12 +16,23 @@ interface Orcamento {
   convertidoEmPedido?: boolean
 }
 
-type PeriodoFiltro = 'mes_atual' | 'ultimos_30' | 'todos'
+type PeriodoFiltro = 'mes_atual' | 'ultimos_30' | 'ultimos_3m' | 'ultimos_6m' | 'este_ano' | 'personalizado'
+
+const OPCOES_PERIODO: { value: PeriodoFiltro; label: string }[] = [
+  { value: 'mes_atual',     label: 'Mês atual' },
+  { value: 'ultimos_30',    label: 'Últimos 30 dias' },
+  { value: 'ultimos_3m',    label: 'Últimos 3 meses' },
+  { value: 'ultimos_6m',    label: 'Últimos 6 meses' },
+  { value: 'este_ano',      label: 'Este ano' },
+  { value: 'personalizado', label: 'Período personalizado' },
+]
 
 export default function Relatorios() {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [periodoSelecionado, setPeriodoSelecionado] = useState<PeriodoFiltro>('mes_atual')
+  const [dataInicioPers, setDataInicioPers] = useState('')
+  const [dataFimPers, setDataFimPers] = useState('')
 
   useEffect(() => {
     carregarDados()
@@ -62,36 +76,34 @@ export default function Relatorios() {
     }
   }
 
-  const filtrarPorPeriodo = <T extends { data?: Date | string; criadoEm?: string }>(
-    items: T[]
-  ): T[] => {
-    if (periodoSelecionado === 'todos') {
-      return items
-    }
-
+  // Calcular intervalo do filtro selecionado
+  const intervaloFiltro = useMemo((): { inicio: Date; fim: Date } | null => {
     const hoje = new Date()
-    let dataInicio: Date
-
-    if (periodoSelecionado === 'mes_atual') {
-      dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
-    } else {
-      // ultimos_30
-      dataInicio = new Date(hoje)
-      dataInicio.setDate(dataInicio.getDate() - 30)
+    switch (periodoSelecionado) {
+      case 'mes_atual':    return { inicio: startOfMonth(hoje), fim: endOfMonth(hoje) }
+      case 'ultimos_30':   return { inicio: subDays(hoje, 30), fim: hoje }
+      case 'ultimos_3m':   return { inicio: subMonths(hoje, 3), fim: hoje }
+      case 'ultimos_6m':   return { inicio: subMonths(hoje, 6), fim: hoje }
+      case 'este_ano':     return { inicio: startOfYear(hoje), fim: hoje }
+      case 'personalizado':
+        if (dataInicioPers && dataFimPers)
+          return { inicio: new Date(dataInicioPers + 'T00:00:00'), fim: new Date(dataFimPers + 'T23:59:59') }
+        return null
     }
+  }, [periodoSelecionado, dataInicioPers, dataFimPers])
 
+  const filtrarPorPeriodo = <T extends { data?: Date | string; criadoEm?: string }>(items: T[]): T[] => {
+    if (!intervaloFiltro) return items
     return items.filter((item) => {
       let dataItem: Date
-
       if ('data' in item && item.data) {
         dataItem = typeof item.data === 'string' ? new Date(item.data) : item.data
       } else if ('criadoEm' in item && item.criadoEm) {
-        dataItem = new Date(item.criadoEm)
+        dataItem = new Date(item.criadoEm as string)
       } else {
         return false
       }
-
-      return dataItem >= dataInicio
+      return isWithinInterval(dataItem, intervaloFiltro)
     })
   }
 
@@ -139,26 +151,46 @@ export default function Relatorios() {
         <p className="text-gray-600">Visão geral do desempenho do seu negócio</p>
       </div>
 
-      {/* Filtro de Período */}
-      <div className="mb-6 flex gap-2">
-        <Button
-          variant={periodoSelecionado === 'mes_atual' ? 'default' : 'outline'}
-          onClick={() => setPeriodoSelecionado('mes_atual')}
-        >
-          Mês Atual
-        </Button>
-        <Button
-          variant={periodoSelecionado === 'ultimos_30' ? 'default' : 'outline'}
-          onClick={() => setPeriodoSelecionado('ultimos_30')}
-        >
-          Últimos 30 Dias
-        </Button>
-        <Button
-          variant={periodoSelecionado === 'todos' ? 'default' : 'outline'}
-          onClick={() => setPeriodoSelecionado('todos')}
-        >
-          Todos os Períodos
-        </Button>
+      {/* Filtro de período */}
+      <div className="flex flex-wrap items-end gap-3 mb-6">
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-gray-500">Período</Label>
+          <Select
+            value={periodoSelecionado}
+            onValueChange={(v) => setPeriodoSelecionado(v as PeriodoFiltro)}
+          >
+            <SelectTrigger className="w-52">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {OPCOES_PERIODO.map(op => (
+                <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {periodoSelecionado === 'personalizado' && (
+          <>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-gray-500">Data inicial</Label>
+              <Input
+                type="date"
+                className="w-40"
+                value={dataInicioPers}
+                onChange={e => setDataInicioPers(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-gray-500">Data final</Label>
+              <Input
+                type="date"
+                className="w-40"
+                value={dataFimPers}
+                onChange={e => setDataFimPers(e.target.value)}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Cards de Resumo */}
