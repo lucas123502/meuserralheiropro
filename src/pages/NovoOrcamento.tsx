@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,6 +28,8 @@ import {
   salvarValorPersonalizadoM2,
   obterValorPersonalizadoM2
 } from '@/types/orcamento'
+
+const AUTOSAVE_KEY = 'orcamento_rascunho'
 
 // Interface para dados do cliente
 interface DadosCliente {
@@ -107,6 +109,10 @@ export default function NovoOrcamento() {
   const [choro, setChoro] = useState<string>('')
   const [taxaMaquininha, setTaxaMaquininha] = useState<string>('')
 
+  // Autosave
+  const [mostrarDialogRascunho, setMostrarDialogRascunho] = useState(false)
+  const autosaveAtivo = useRef(false) // evita salvar antes da tentativa de restauração
+
   // Estados para sugestão de atualização de valor por m²
   const [mostrarSugestaoValorM2, setMostrarSugestaoValorM2] = useState(false)
   const [sugestaoValorM2, setSugestaoValorM2] = useState<{
@@ -121,6 +127,78 @@ export default function NovoOrcamento() {
   useEffect(() => {
     setServicosSalvos(obterServicosPersonalizados())
   }, [])
+
+  // Verificar rascunho salvo ao abrir a tela
+  useEffect(() => {
+    const rascunho = localStorage.getItem(AUTOSAVE_KEY)
+    if (rascunho) {
+      setMostrarDialogRascunho(true)
+    } else {
+      autosaveAtivo.current = true
+    }
+  }, [])
+
+  // Autosave: salvar estado atual sempre que algo mudar
+  useEffect(() => {
+    if (!autosaveAtivo.current) return
+
+    const estado = {
+      etapaAtual,
+      categoriaSelecionada,
+      subcategoriaSelecionada,
+      modeloSelecionado,
+      modoRapido,
+      servicoPersonalizado,
+      largura, altura, unidadeLargura, unidadeAltura,
+      valorM2Editavel,
+      dadosCliente,
+      itens,
+      observacoes,
+      materiais, kitPadrao, diarias, maoDeObra, choro, taxaMaquininha,
+    }
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(estado))
+  }, [
+    etapaAtual, categoriaSelecionada, subcategoriaSelecionada, modeloSelecionado,
+    modoRapido, servicoPersonalizado, largura, altura, unidadeLargura, unidadeAltura,
+    valorM2Editavel, dadosCliente, itens, observacoes,
+    materiais, kitPadrao, diarias, maoDeObra, choro, taxaMaquininha,
+  ])
+
+  const restaurarRascunho = () => {
+    const rascunho = localStorage.getItem(AUTOSAVE_KEY)
+    if (!rascunho) return
+    try {
+      const s = JSON.parse(rascunho)
+      if (s.etapaAtual) setEtapaAtual(s.etapaAtual)
+      if (s.categoriaSelecionada) setCategoriaSelecionada(s.categoriaSelecionada)
+      if (s.subcategoriaSelecionada) setSubcategoriaSelecionada(s.subcategoriaSelecionada)
+      if (s.modeloSelecionado) setModeloSelecionado(s.modeloSelecionado)
+      if (s.modoRapido !== undefined) setModoRapido(s.modoRapido)
+      if (s.servicoPersonalizado) setServicoPersonalizado(s.servicoPersonalizado)
+      if (s.largura !== undefined) setLargura(s.largura)
+      if (s.altura !== undefined) setAltura(s.altura)
+      if (s.unidadeLargura) setUnidadeLargura(s.unidadeLargura)
+      if (s.unidadeAltura) setUnidadeAltura(s.unidadeAltura)
+      if (s.valorM2Editavel !== undefined) setValorM2Editavel(s.valorM2Editavel)
+      if (s.dadosCliente) setDadosCliente(s.dadosCliente)
+      if (s.itens) setItens(s.itens)
+      if (s.observacoes !== undefined) setObservacoes(s.observacoes)
+      if (s.materiais !== undefined) setMateriais(s.materiais)
+      if (s.kitPadrao !== undefined) setKitPadrao(s.kitPadrao)
+      if (s.diarias !== undefined) setDiarias(s.diarias)
+      if (s.maoDeObra !== undefined) setMaoDeObra(s.maoDeObra)
+      if (s.choro !== undefined) setChoro(s.choro)
+      if (s.taxaMaquininha !== undefined) setTaxaMaquininha(s.taxaMaquininha)
+    } catch (_) {}
+    setMostrarDialogRascunho(false)
+    autosaveAtivo.current = true
+  }
+
+  const descartarRascunho = () => {
+    localStorage.removeItem(AUTOSAVE_KEY)
+    setMostrarDialogRascunho(false)
+    autosaveAtivo.current = true
+  }
 
   // Função para converter unidades para metros
   const converterParaMetros = (valor: number, unidade: 'm' | 'cm' | 'mm'): number => {
@@ -589,6 +667,9 @@ export default function NovoOrcamento() {
       }
     }
 
+    // Limpar rascunho após salvar com sucesso
+    localStorage.removeItem(AUTOSAVE_KEY)
+
     toast({
       title: 'Orçamento criado!',
       description: 'Orçamento salvo com sucesso'
@@ -638,6 +719,33 @@ export default function NovoOrcamento() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Dialog de recuperação de rascunho */}
+      {mostrarDialogRascunho && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <FileCheck className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-lg">Continuar de onde parou?</h3>
+                <p className="text-gray-600 text-sm mt-1">
+                  Encontramos um orçamento não finalizado. Deseja continuar preenchendo?
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button className="flex-1" onClick={restaurarRascunho}>
+                Continuar
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={descartarRascunho}>
+                Começar do zero
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto p-6 max-w-6xl">
         {/* Header */}
         <div className="mb-6">
