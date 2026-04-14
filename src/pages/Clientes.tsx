@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Plus, Users, Phone, MapPin } from 'lucide-react'
+import { Plus, Users, Phone, MapPin, MessageCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Cliente, ClienteFormData } from '@/types/cliente'
 import { migrarClientesDeOrcamentos } from '@/lib/cliente-manager'
@@ -30,6 +30,27 @@ export default function Clientes() {
     if (saved) {
       setClientes(JSON.parse(saved))
     }
+  }
+
+  const chamarWhatsApp = (cliente: Cliente) => {
+    const telefoneLimpo = (cliente.telefone || '').replace(/\D/g, '')
+
+    if (!telefoneLimpo) {
+      toast({
+        title: 'Telefone não cadastrado',
+        description: 'Edite o cliente para adicionar o número de telefone.',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    const telefoneFormatado = telefoneLimpo.startsWith('55')
+      ? telefoneLimpo
+      : `55${telefoneLimpo}`
+
+    const mensagem = `Olá, estou entrando em contato sobre seu orçamento. Podemos continuar?`
+    const url = `https://wa.me/${telefoneFormatado}?text=${encodeURIComponent(mensagem)}`
+    window.open(url, '_blank')
   }
 
   const contarOrcamentos = (clienteId: string): number => {
@@ -226,6 +247,18 @@ export default function Clientes() {
                           {cliente.endereco}
                         </div>
                       )}
+                    </div>
+
+                    <div className="mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-green-700 border-green-300 hover:bg-green-50"
+                        onClick={() => chamarWhatsApp(cliente)}
+                      >
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Chamar no WhatsApp
+                      </Button>
                     </div>
                   </div>
 
