@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { DollarSign, TrendingUp, Package, Calendar, User, FileText, Info, Plus, CheckCircle, Clock } from 'lucide-react'
+import { DollarSign, TrendingUp, Package, Calendar, User, FileText, Info, Plus, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { format, startOfMonth, endOfMonth, subDays, isWithinInterval } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Pedido } from '@/types/pedido'
@@ -33,6 +33,25 @@ const CONTA_RECEBER_VAZIA: Omit<ContaReceber, 'id' | 'criadoEm' | 'status'> = {
   categoria: '',
 }
 
+interface ContaPagar {
+  id: string
+  descricao: string
+  valor: number
+  vencimento: string
+  categoria: string
+  status: 'pendente' | 'pago'
+  criadoEm: string
+}
+
+const CATEGORIAS_PAGAR = ['Material', 'Funcionário', 'Aluguel', 'Outros']
+
+const CONTA_PAGAR_VAZIA: Omit<ContaPagar, 'id' | 'criadoEm' | 'status'> = {
+  descricao: '',
+  valor: 0,
+  vencimento: '',
+  categoria: '',
+}
+
 export default function Financeiro() {
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [filtroSelecionado, setFiltroSelecionado] = useState<FiltroPeriodo>('mes_atual')
@@ -42,9 +61,15 @@ export default function Financeiro() {
   const [modalAberto, setModalAberto] = useState(false)
   const [novaConta, setNovaConta] = useState(CONTA_RECEBER_VAZIA)
 
+  // Contas a Pagar
+  const [contasPagar, setContasPagar] = useState<ContaPagar[]>([])
+  const [modalPagarAberto, setModalPagarAberto] = useState(false)
+  const [novaDespesa, setNovaDespesa] = useState(CONTA_PAGAR_VAZIA)
+
   useEffect(() => {
     carregarPedidos()
     carregarContasReceber()
+    carregarContasPagar()
   }, [])
 
   const carregarPedidos = () => {
@@ -92,6 +117,46 @@ export default function Financeiro() {
 
   const totalRecebido = contasReceber
     .filter(c => c.status === 'recebido')
+    .reduce((acc, c) => acc + c.valor, 0)
+
+  const carregarContasPagar = () => {
+    const saved = localStorage.getItem('contasPagar')
+    if (saved) {
+      setContasPagar(JSON.parse(saved))
+    }
+  }
+
+  const salvarContasPagar = (contas: ContaPagar[]) => {
+    localStorage.setItem('contasPagar', JSON.stringify(contas))
+    setContasPagar(contas)
+  }
+
+  const adicionarDespesa = () => {
+    if (!novaDespesa.descricao || !novaDespesa.valor || !novaDespesa.vencimento || !novaDespesa.categoria) return
+    const conta: ContaPagar = {
+      ...novaDespesa,
+      id: Date.now().toString(),
+      status: 'pendente',
+      criadoEm: new Date().toISOString(),
+    }
+    salvarContasPagar([...contasPagar, conta])
+    setNovaDespesa(CONTA_PAGAR_VAZIA)
+    setModalPagarAberto(false)
+  }
+
+  const marcarComoPago = (id: string) => {
+    const atualizadas = contasPagar.map(c =>
+      c.id === id ? { ...c, status: 'pago' as const } : c
+    )
+    salvarContasPagar(atualizadas)
+  }
+
+  const totalAPagar = contasPagar
+    .filter(c => c.status === 'pendente')
+    .reduce((acc, c) => acc + c.valor, 0)
+
+  const totalPago = contasPagar
+    .filter(c => c.status === 'pago')
     .reduce((acc, c) => acc + c.valor, 0)
 
   // Filtrar apenas pedidos finalizados
@@ -485,6 +550,204 @@ export default function Financeiro() {
             <Button
               onClick={adicionarConta}
               disabled={!novaConta.nome || !novaConta.valor || !novaConta.vencimento || !novaConta.categoria}
+            >
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─────────────── CONTAS A PAGAR ─────────────── */}
+      <div className="mt-10">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Contas a Pagar</h2>
+            <p className="text-gray-600 text-sm mt-1">Controle suas despesas e obrigações financeiras</p>
+          </div>
+          <Button
+            onClick={() => setModalPagarAberto(true)}
+            variant="destructive"
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Nova Despesa
+          </Button>
+        </div>
+
+        {/* Resumo Contas a Pagar */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card className="border-2 border-red-200 bg-red-50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">Total a Pagar</CardTitle>
+              <div className="h-9 w-9 bg-red-200 rounded-lg flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-red-700" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-700">
+                R$ {totalAPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {contasPagar.filter(c => c.status === 'pendente').length} despesa(s) pendente(s)
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-green-200 bg-green-50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">Total Pago</CardTitle>
+              <div className="h-9 w-9 bg-green-200 rounded-lg flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 text-green-700" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-700">
+                R$ {totalPago.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {contasPagar.filter(c => c.status === 'pago').length} despesa(s) quitada(s)
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lista de Despesas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Lista de Despesas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {contasPagar.length === 0 ? (
+              <div className="text-center py-10">
+                <div className="flex justify-center mb-3">
+                  <div className="h-14 w-14 bg-gray-100 rounded-full flex items-center justify-center">
+                    <AlertCircle className="h-7 w-7 text-gray-400" />
+                  </div>
+                </div>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">Nenhuma despesa cadastrada</h3>
+                <p className="text-gray-500 text-sm">Clique em "+ Nova Despesa" para adicionar.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {contasPagar.map((conta) => (
+                  <div
+                    key={conta.id}
+                    className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                      conta.status === 'pendente'
+                        ? 'border-red-200 bg-red-50 hover:bg-red-100'
+                        : 'border-green-200 bg-green-50 hover:bg-green-100'
+                    }`}
+                  >
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-gray-900">{conta.descricao}</span>
+                        <Badge
+                          className={
+                            conta.status === 'pago'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }
+                        >
+                          {conta.status === 'pago' ? 'Pago' : 'Pendente'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">{conta.categoria}</Badge>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          Vence em {format(new Date(conta.vencimento + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className={`text-lg font-bold ${conta.status === 'pendente' ? 'text-red-700' : 'text-green-700'}`}>
+                          R$ {conta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                      {conta.status === 'pendente' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-green-700 border-green-300 hover:bg-green-50"
+                          onClick={() => marcarComoPago(conta.id)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Marcar como pago
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Modal Nova Despesa */}
+      <Dialog open={modalPagarAberto} onOpenChange={setModalPagarAberto}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Despesa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="cp-descricao">Descrição</Label>
+              <Input
+                id="cp-descricao"
+                placeholder="Ex: Compra de materiais"
+                value={novaDespesa.descricao}
+                onChange={e => setNovaDespesa(p => ({ ...p, descricao: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cp-valor">Valor (R$)</Label>
+              <Input
+                id="cp-valor"
+                type="number"
+                min={0}
+                step={0.01}
+                placeholder="0,00"
+                value={novaDespesa.valor || ''}
+                onChange={e => setNovaDespesa(p => ({ ...p, valor: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cp-vencimento">Data de Vencimento</Label>
+              <Input
+                id="cp-vencimento"
+                type="date"
+                value={novaDespesa.vencimento}
+                onChange={e => setNovaDespesa(p => ({ ...p, vencimento: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Categoria</Label>
+              <Select
+                value={novaDespesa.categoria}
+                onValueChange={v => setNovaDespesa(p => ({ ...p, categoria: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIAS_PAGAR.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalPagarAberto(false)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={adicionarDespesa}
+              disabled={!novaDespesa.descricao || !novaDespesa.valor || !novaDespesa.vencimento || !novaDespesa.categoria}
             >
               Salvar
             </Button>
