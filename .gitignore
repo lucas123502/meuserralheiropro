@@ -30,3 +30,7 @@ coverage
 .lasy/
 .lasy/
 .lasy/
+
+# Lasy internal
+.claude
+.lasy
