@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, FileText, Calendar, DollarSign, Download, CheckCircle, Settings, MessageCircle, Bell } from 'lucide-react'
+import { Plus, FileText, Calendar, DollarSign, Download, CheckCircle, Settings, MessageCircle, Bell, Copy } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { baixarPDF } from '@/lib/pdf-generator'
@@ -42,6 +42,7 @@ function gerarMensagemWhatsApp(_orcamento: Orcamento): string {
 
 export default function Orcamentos() {
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
 
   useEffect(() => {
@@ -154,6 +155,35 @@ export default function Orcamentos() {
 
     const diasPassados = (Date.now() - dataRef.getTime()) / (1000 * 60 * 60 * 24)
     return diasPassados >= 2
+  }
+
+  const duplicarOrcamento = (orcamento: Orcamento) => {
+    const copia: Orcamento = {
+      ...orcamento,
+      id: Date.now().toString(),
+      data: new Date(),
+      status: 'rascunho',
+      convertidoEmPedido: false,
+      dataEnvioWhatsApp: undefined,
+      cliente: `Cópia de ${orcamento.cliente || 'Cliente sem nome'}`,
+      clienteCompleto: orcamento.clienteCompleto
+        ? { ...orcamento.clienteCompleto, nome: `Cópia de ${orcamento.clienteCompleto.nome}` }
+        : undefined,
+    }
+
+    const lista = [...orcamentos, copia]
+    setOrcamentos(lista)
+    localStorage.setItem('orcamentos', JSON.stringify(lista))
+
+    toast({
+      title: 'Orçamento duplicado!',
+      description: 'A cópia foi criada como rascunho. Você pode editá-la pelo WhatsApp ou PDF.',
+    })
+
+    // Rola até o final da lista onde a cópia foi inserida
+    setTimeout(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+    }, 100)
   }
 
   const paraAcompanhar = orcamentos.filter(precisaFollowUp)
@@ -349,6 +379,16 @@ export default function Orcamentos() {
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Baixar PDF
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-blue-700 border-blue-300 hover:bg-blue-50"
+                    onClick={() => duplicarOrcamento(orcamento)}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Duplicar
                   </Button>
 
                   <Button
