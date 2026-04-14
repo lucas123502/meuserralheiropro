@@ -49,10 +49,22 @@ export async function redirecionarParaCheckout(params: {
       return { error: data.message || 'Erro ao criar sessão de pagamento.' }
     }
 
-    const { sessionId } = await response.json()
+    const data = await response.json()
+    const sessionUrl: string | undefined = data.url || data.sessionUrl
 
-    const result = await stripe.redirectToCheckout({ sessionId })
-    if (result.error) {
+    if (sessionUrl) {
+      window.location.href = sessionUrl
+      return {}
+    }
+
+    // Fallback: redireciona via sessionId usando stripe.js
+    const sessionId: string = data.sessionId
+    if (!sessionId) {
+      return { error: 'Sessão de pagamento inválida.' }
+    }
+
+    const result = await (stripe as any).redirectToCheckout({ sessionId })
+    if (result?.error) {
       return { error: result.error.message || 'Erro ao redirecionar para pagamento.' }
     }
 
