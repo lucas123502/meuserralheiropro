@@ -9,6 +9,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  },
   server: {
     host: '0.0.0.0',  // Permite acesso externo (necessário para sandbox)
     port: 8080,        // Porta padrão para preview
